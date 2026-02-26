@@ -52,11 +52,11 @@ Legenda:
 |-----|---------------------------------------------------------------------------------------|:--:|:--:|:--:|:--:|-----------------------------------------------------------------------------------------------|
 | 3.1 | Opste informacije o ukupnom broju registrovanih prostora                              |    |    | ✅ | ✅ | Backend: API endpoint za statistiku `COUNT(*) FROM prostori WHERE status='odobren'`           |
 | 3.2 | TOP 5 najbolje ocenjenih prostora (po broju lajkova/svidjanja)                        |    |    | ✅ | ✅ | Backend: query sa `COUNT(reakcije WHERE tip='svidjanje')` + `ORDER BY` + `LIMIT 5`           |
-| 3.3 | Pretraga po nazivu prostora                                                           |    |    | ✅ | ✅ | Backend: `WHERE naziv LIKE '%..%'`; Frontend: input polje za unos teksta                     |
-| 3.4 | Pretraga po gradu - padajuca lista sa mogucnoscu vise izbora                          |    |    | ✅ | ✅ | Backend: `WHERE grad IN (...)` filter; Frontend: multi-select dropdown                       |
+| 3.3 | Jedinstvena pretraga po nazivu prostora i gradu                                       |    |    | ✅ | ✅ | Backend: jedan endpoint/upit sa kombinovanim filterima (`naziv` + `grad IN (...)`); Frontend: input + multi-select |
+| 3.4 | Pretraga po gradu - padajuca lista sa mogucnoscu vise izbora (kao deo iste pretrage)  |    |    |    | ✅ | Frontend: multi-select kontrola koja popunjava parametre iste pretrage (bez posebnog endpoint-a/upita) |
 | 3.5 | Padajuca lista prikazuje samo gradove sa aktivnim prostorima                          |    |    | ✅ | ✅ | Backend: `SELECT DISTINCT grad FROM prostori WHERE status='odobren'`                         |
 | 3.6 | Rezultati pretrage u tabeli sa dugmetom "DETALJI"                                     |    |    | ✅ | ✅ | Backend: paginiran REST API; Frontend: tabela + routerLink na detalje                        |
-| 3.7 | Abecedno sortiranje po nazivu prostora i gradu (rastuci/opadajuci)                   |    |    | ✅ | ✅ | Backend: `ORDER BY` sa parametrom smera; Frontend: klik na zaglavlje kolone                  |
+| 3.7 | Abecedno sortiranje po nazivu prostora i gradu (rastuci/opadajuci)                   |    |    |    | ✅ | Sortiranje se radi u potpunosti na frontendu (klik na zaglavlje kolone)                      |
 | 3.8 | Detalji: naziv, grad, adresa, firma, menadzer, broj svidjanja/nesvidjanja             |    |    | ✅ | ✅ | Backend: JOIN query preko prostori/firme/korisnici/reakcije; Frontend: detaljna strana        |
 | 3.9 | Galerija slika sa glavnom slikom i do 5 thumbnail-a                                   |    |    | ✅ | ✅ | Backend: vraca listu slika iz `slike_prostora`; Frontend: galerija komponenta sa uvecanjenjem |
 | 3.10| Odabrana slika iz galerije se pamti u cookie-ju pregledaca                            |    |    |    | ✅ | Cisto frontend resenje - `document.cookie` ili `ngx-cookie-service`                          |
@@ -71,7 +71,7 @@ Legenda:
 | 4.2  | Azuriranje podataka (zabrana promene korisnickog imena)                                   |    |    | ✅ | ✅ | Backend: PUT endpoint ignorise `korisnicko_ime`; Frontend: polje disabled                         |
 | 4.3  | Mogucnost promene profilne slike                                                          |    |    | ✅ | ✅ | Backend: multipart upload; Frontend: file input sa preview-om                                     |
 | 4.4  | Tabela svih rezervacija (prosle + aktuelne)                                               |    |    | ✅ | ✅ | Backend: `GET /api/rezervacije?clanId=X`; Frontend: tabela sa kolonama                            |
-| 4.5  | Sortiranje rezervacija                                                                    |    |    | ✅ | ✅ | Backend: `ORDER BY` parametar; Frontend: klik na zaglavlje kolone                                 |
+| 4.5  | Sortiranje rezervacija                                                                    |    |    |    | ✅ | Sortiranje se radi u potpunosti na frontendu (klik na zaglavlje kolone)                           |
 | 4.6  | Otkazivanje rezervacije samo 12+ sati pre pocetka                                        |    |    | ✅ | ✅ | Backend: provera `datum_od - NOW() >= 12h`; Frontend: disable dugme "Otkazi" ako je <12h         |
 | 4.7  | Pretraga sa checkbox-ovima: radni sto / kancelarija / konferencijska sala                 |    |    | ✅ | ✅ | Backend: filter po tipu elementa; Frontend: checkbox logika (odabir jednog disabluje ostale)      |
 | 4.8  | Numericko polje za velicinu kancelarije (za koliko osoba)                                 |    |    | ✅ | ✅ | Backend: filter `kancelarije.broj_stolova >= X`; Frontend: input sa uslovnom vidljivoscu          |

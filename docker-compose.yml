@@ -1,4 +1,22 @@
 services:
+  backend:
+    build:
+      context: ./backend/app
+      dockerfile: Dockerfile
+    container_name: coworking_hub_backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/coworking_hub?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Europe/Belgrade
+      SPRING_DATASOURCE_USERNAME: coworking
+      SPRING_DATASOURCE_PASSWORD: coworking123
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend/app/uploads:/app/uploads
+
   mysql:
     image: mysql:8.0
     container_name: coworking_hub_db

@@ -7,7 +7,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Locale;
 import java.util.Set;
@@ -38,7 +37,7 @@ public class ImageStorageService {
         String extension = resolveExtension(file.getOriginalFilename(), file.getContentType());
         String filename = UUID.randomUUID() + extension;
 
-        Path basePath = Paths.get(uploadProperties.getBaseDir()).toAbsolutePath().normalize();
+        Path basePath = uploadProperties.resolveBasePath();
         Path targetFolder = basePath.resolve(relativeFolder).normalize();
         Path targetFile = targetFolder.resolve(filename).normalize();
 

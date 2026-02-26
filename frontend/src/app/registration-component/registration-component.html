@@ -1,0 +1,74 @@
+<div class="login-container">
+  <h2>Registracija</h2>
+
+  <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
+  <div class="success-message" *ngIf="successMessage">{{ successMessage }}</div>
+
+  <form (ngSubmit)="register()" #registerForm="ngForm">
+    <div class="form-group">
+      <label for="accountType">Tip naloga:</label>
+      <select id="accountType" [(ngModel)]="accountType" name="accountType">
+        <option value="member">Član</option>
+        <option value="manager">Menadžer</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="username">Username:</label>
+      <input id="username" type="text" [(ngModel)]="username" name="username" required />
+    </div>
+
+    <div class="form-group">
+      <label for="password">Lozinka:</label>
+      <input id="password" type="password" [(ngModel)]="password" name="password" required />
+    </div>
+
+    <div class="form-group">
+      <label for="ime">Ime:</label>
+      <input id="ime" type="text" [(ngModel)]="ime" name="ime" required />
+    </div>
+
+    <div class="form-group">
+      <label for="prezime">Prezime:</label>
+      <input id="prezime" type="text" [(ngModel)]="prezime" name="prezime" required />
+    </div>
+
+    <div class="form-group">
+      <label for="telefon">Telefon:</label>
+      <input id="telefon" type="text" [(ngModel)]="telefon" name="telefon" required />
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email:</label>
+      <input id="email" type="email" [(ngModel)]="email" name="email" required />
+    </div>
+
+    <div class="form-group" *ngIf="accountType === 'manager'">
+      <label for="firma_naziv">Naziv firme:</label>
+      <input id="firma_naziv" type="text" [(ngModel)]="firma_naziv" name="firma_naziv" required />
+    </div>
+
+    <div class="form-group" *ngIf="accountType === 'manager'">
+      <label for="firma_adresa">Adresa firme:</label>
+      <input id="firma_adresa" type="text" [(ngModel)]="firma_adresa" name="firma_adresa" required />
+    </div>
+
+    <div class="form-group" *ngIf="accountType === 'manager'">
+      <label for="firma_maticni_broj">Matični broj:</label>
+      <input id="firma_maticni_broj" type="text" [(ngModel)]="firma_maticni_broj" name="firma_maticni_broj" required />
+    </div>
+
+    <div class="form-group" *ngIf="accountType === 'manager'">
+      <label for="firma_pib">PIB:</label>
+      <input id="firma_pib" type="text" [(ngModel)]="firma_pib" name="firma_pib" required />
+    </div>
+
+    <div class="form-group">
+      <label for="profileImage">Profilna slika (opciono, jpg/png):</label>
+      <input id="profileImage" type="file" accept="image/jpeg,image/png" (change)="on_file_selected($event)" />
+      <small *ngIf="profileImageInfo">{{ profileImageInfo }}</small>
+    </div>
+
+    <button type="submit">Registruj se</button>
+  </form>
+</div>

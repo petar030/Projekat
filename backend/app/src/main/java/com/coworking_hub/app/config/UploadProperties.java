@@ -2,6 +2,9 @@ package com.coworking_hub.app.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 @ConfigurationProperties(prefix = "app.upload")
 public class UploadProperties {
 
@@ -22,5 +25,17 @@ public class UploadProperties {
 
     public void setPublicPrefix(String publicPrefix) {
         this.publicPrefix = publicPrefix;
+    }
+
+    public Path resolveBasePath() {
+        String configuredBaseDir = (baseDir == null || baseDir.isBlank()) ? "uploads" : baseDir.trim();
+        Path configuredPath = Paths.get(configuredBaseDir);
+        if (configuredPath.isAbsolute()) {
+            return configuredPath.normalize();
+        }
+        Path workingDir = Paths.get(System.getProperty("user.dir", "."))
+                .toAbsolutePath()
+                .normalize();
+        return workingDir.resolve(configuredPath).normalize();
     }
 }

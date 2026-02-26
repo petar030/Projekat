@@ -1,8 +1,11 @@
 package com.coworking_hub.app.repository;
 
 import com.coworking_hub.app.model.Korisnik;
+import com.coworking_hub.app.model.enums.StatusKorisnika;
+import com.coworking_hub.app.model.enums.Uloga;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Collection;
 import java.util.Optional;
 
 public interface KorisnikRepository extends JpaRepository<Korisnik, Long> {
@@ -14,4 +17,6 @@ public interface KorisnikRepository extends JpaRepository<Korisnik, Long> {
 	boolean existsByKorisnickoIme(String korisnickoIme);
 
 	boolean existsByEmail(String email);
+
+	long countByFirmaIdAndUlogaAndStatusIn(Long firmaId, Uloga uloga, Collection<StatusKorisnika> statuses);
 }

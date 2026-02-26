@@ -67,6 +67,11 @@ public class AuthController {
         }
 
         Korisnik user = userOptional.get();
+        if (user.getUloga() == Uloga.admin) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Nije moguce se prijaviti kao admin preko ove stranice"));
+        }
+
         if (!passwordEncoder.matches(request.password(), user.getLozinka())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("message", "Pogresni kredencijali"));
@@ -88,7 +93,7 @@ public class AuthController {
                 accessToken,
                 "Bearer",
                 ACCESS_TOKEN_EXPIRES_SECONDS,
-            new LoginUserDto(user.getId(), user.getKorisnickoIme(), user.getUloga().name(), user.getStatus().name())
+            new LoginUserDto(user.getId(), user.getKorisnickoIme(), user.getUloga().name(), user.getStatus().name(), user.getProfilnaSlika())
         ));
     }
 
@@ -101,7 +106,12 @@ public class AuthController {
         }
 
         Korisnik user = userOptional.get();
-        if (user.getUloga() != Uloga.admin || !passwordEncoder.matches(request.password(), user.getLozinka())) {
+        if (user.getUloga() != Uloga.admin) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("message", "Ovaj endpoint je samo za admin naloge"));
+        }
+
+        if (!passwordEncoder.matches(request.password(), user.getLozinka())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Pogresni admin kredencijali"));
         }
@@ -117,7 +127,7 @@ public class AuthController {
                 accessToken,
                 "Bearer",
                 ACCESS_TOKEN_EXPIRES_SECONDS,
-            new LoginUserDto(user.getId(), user.getKorisnickoIme(), user.getUloga().name(), user.getStatus().name())
+            new LoginUserDto(user.getId(), user.getKorisnickoIme(), user.getUloga().name(), user.getStatus().name(), user.getProfilnaSlika())
         ));
     }
 
@@ -135,6 +145,11 @@ public class AuthController {
         if (korisnikRepository.existsByEmail(request.email())) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new RegistrationResponse(null, request.username(), "clan", "na_cekanju", "Email vec postoji"));
+        }
+
+        if (!isPasswordValid(request.password())) {
+            return ResponseEntity.badRequest()
+                    .body(new RegistrationResponse(null, request.username(), "clan", "na_cekanju", "Lozinka nije u ispravnom formatu"));
         }
 
         Korisnik korisnik = new Korisnik();
@@ -176,6 +191,11 @@ public class AuthController {
                 .body(new RegistrationResponse(null, request.username(), "menadzer", "na_cekanju", "Email vec postoji"));
         }
 
+        if (!isPasswordValid(request.password())) {
+            return ResponseEntity.badRequest()
+                    .body(new RegistrationResponse(null, request.username(), "menadzer", "na_cekanju", "Lozinka nije u ispravnom formatu"));
+        }
+
         if (request.firma() == null) {
             return ResponseEntity.badRequest()
                 .body(new RegistrationResponse(null, request.username(), "menadzer", "na_cekanju", "Podaci o firmi su obavezni"));
@@ -187,6 +207,24 @@ public class AuthController {
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest()
                     .body(new RegistrationResponse(null, request.username(), "menadzer", "na_cekanju", ex.getMessage()));
+        }
+
+        if (firma.getId() != null) {
+            long brojMenadzera = korisnikRepository.countByFirmaIdAndUlogaAndStatusIn(
+                firma.getId(),
+                Uloga.menadzer,
+                List.of(StatusKorisnika.na_cekanju, StatusKorisnika.odobren)
+            );
+            if (brojMenadzera >= 2) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new RegistrationResponse(
+                    null,
+                    request.username(),
+                    "menadzer",
+                    "na_cekanju",
+                    "Firma vec ima maksimalno 2 menadzera (odobrena ili na cekanju)."
+                ));
+            }
         }
 
         Korisnik korisnik = new Korisnik();
@@ -247,7 +285,7 @@ public class AuthController {
 
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(new PasswordResetRequestResponse(
-                        "https://app.coworkinghub.rs/reset-password?token=" + token,
+                token,
                         expiresAt,
                         RESET_TOKEN_EXPIRES_SECONDS
                 ));
@@ -346,7 +384,7 @@ public class AuthController {
     public record LoginResponse(String accessToken, String tokenType, long expiresIn, LoginUserDto user) {
     }
 
-    public record LoginUserDto(Long id, String username, String role, String status) {
+    public record LoginUserDto(Long id, String username, String role, String status, String profileImage) {
     }
 
     public record RegisterMemberRequest(
@@ -379,7 +417,7 @@ public class AuthController {
     public record PasswordResetRequestDto(String usernameOrEmail) {
     }
 
-    public record PasswordResetRequestResponse(String resetUrl, LocalDateTime tokenExpiresAt, long expiresInSeconds) {
+    public record PasswordResetRequestResponse(String token, LocalDateTime tokenExpiresAt, long expiresInSeconds) {
     }
 
     public record PasswordResetConfirmRequest(String token, String newPassword) {

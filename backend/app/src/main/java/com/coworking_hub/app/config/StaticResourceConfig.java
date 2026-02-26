@@ -6,7 +6,6 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 @Configuration
 @EnableConfigurationProperties(UploadProperties.class)
@@ -21,7 +20,7 @@ public class StaticResourceConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         String publicPrefix = normalizePublicPrefix(uploadProperties.getPublicPrefix());
-        Path uploadPath = Paths.get(uploadProperties.getBaseDir()).toAbsolutePath().normalize();
+        Path uploadPath = uploadProperties.resolveBasePath();
         String location = uploadPath.toUri().toString();
 
         registry.addResourceHandler(publicPrefix + "/**")

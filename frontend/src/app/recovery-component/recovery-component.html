@@ -1,0 +1,35 @@
+<div class="login-container">
+	<h2>Recovery</h2>
+
+	<p><strong>Token:</strong> {{ token }}</p>
+	<p><strong>Preostalo vreme:</strong> {{ remainingTimeLabel }}</p>
+
+	<div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
+	<div class="success-message" *ngIf="successMessage">{{ successMessage }}</div>
+
+	<form (ngSubmit)="confirmReset()" #recoveryForm="ngForm">
+		<div class="form-group">
+			<label for="newPassword">Nova lozinka:</label>
+			<input
+				type="password"
+				id="newPassword"
+				[(ngModel)]="newPassword"
+				name="newPassword"
+				required
+			/>
+		</div>
+
+		<div class="form-group">
+			<label for="confirmPassword">Potvrda lozinke:</label>
+			<input
+				type="password"
+				id="confirmPassword"
+				[(ngModel)]="confirmPassword"
+				name="confirmPassword"
+				required
+			/>
+		</div>
+
+		<button type="submit" [disabled]="remainingSeconds <= 0">Promeni lozinku</button>
+	</form>
+</div>

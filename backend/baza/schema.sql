@@ -527,7 +527,7 @@ DELIMITER ;
 INSERT INTO korisnici (korisnicko_ime, lozinka, ime, prezime, telefon, email, uloga, status)
 VALUES (
     'admin',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    '$2a$10$tlBujIksU7MO8Ltqg6r96ujpJuylKVResIJmiEBZK1WeyOUpaQdw.',
     'System',
     'Administrator',
     '+381600000000',
@@ -535,3 +535,52 @@ VALUES (
     'admin',
     'odobren'
 );
+
+-- DODATNI TEST KORISNICI SA PROFILNIM SLIKAMA IZ uploads/profiles
+-- Lozinka za sve korisnike ispod: User123! (bcrypt hash)
+INSERT INTO korisnici (korisnicko_ime, lozinka, ime, prezime, telefon, email, profilna_slika, uloga, status)
+VALUES
+    (
+        'ana',
+        '$2a$10$aX1PXw7FEDI53Blgr.F8yeECrhbjAYt0ZJWyfU35KwLWkp0QBa61O',
+        'Ana',
+        'Anić',
+        '+381611110001',
+        'ana@coworkinghub.rs',
+        '/uploads/profiles/ana.jpg',
+        'clan',
+        'odobren'
+    ),
+    (
+        'marko',
+        '$2a$10$G1dQ2g.FWVwhzRdnV0pSJOK0UBtUfxzkvYbTwvBQCwaVBWvE/k0R6',
+        'Marko',
+        'Marković',
+        '+381611110002',
+        'marko@coworkinghub.rs',
+        '/uploads/profiles/marko.jpg',
+        'clan',
+        'odobren'
+    ),
+    (
+        'maja',
+        '$2a$10$0fV6iDi9D9xgUSSaXtmuiOWB9thYq6.hyaLP0Iy8c1RMwAdt8htZe',
+        'Maja',
+        'Majić',
+        '+381611110003',
+        'maja@coworkinghub.rs',
+        '/uploads/profiles/maja.jpg',
+        'clan',
+        'odobren'
+    ),
+    (
+        'petar',
+        '$2a$10$TmcouBP7/AXDpN.1T4Vt3O/bnFMi8nyginEDBrSIK8AWJpl3SdR5i',
+        'Petar',
+        'Petrović',
+        '+381611110004',
+        'petar@coworkinghub.rs',
+        '/uploads/profiles/petar.jpg',
+        'clan',
+        'odobren'
+    );

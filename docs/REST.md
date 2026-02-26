@@ -183,8 +183,8 @@ Response `201`: isto kao za clana, uz `role=menadzer`.
 Po tvojoj postavci koristi se najjednostavniji tok:
 
 1. Korisnik u formi unosi `usernameOrEmail`.
-2. Backend vraca privremeni reset link + vreme isteka.
-3. Korisnik klikne link (frontend ruta `/reset-password?token=...`).
+2. Backend vraca reset token + vreme isteka.
+3. Frontend formira link (npr. ruta `/reset-password?token=...`) i prikazuje formu.
 4. Frontend prikaze formu za novu lozinku i odbrojavanje do isteka.
 5. Frontend posalje `token + newPassword` backendu.
 6. Ako je token validan i nije istekao, lozinka se menja.
@@ -208,7 +208,7 @@ Response `202`:
 
 ```json
 {
-  "resetUrl": "https://app.coworkinghub.rs/reset-password?token=<reset_token>",
+  "token": "<reset_token>",
   "tokenExpiresAt": "2026-02-25T14:10:00",
   "expiresInSeconds": 1800
 }

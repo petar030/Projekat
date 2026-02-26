@@ -29,6 +29,7 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
@@ -123,8 +124,33 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/admin/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Pogresni admin kredencijali"));
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("Ovaj endpoint je samo za admin naloge"));
+    }
+
+    @Test
+    void standardLoginWithAdminShouldReturnForbidden() throws Exception {
+                Korisnik admin = new Korisnik();
+                admin.setId(1L);
+                admin.setKorisnickoIme("admin");
+                admin.setLozinka(passwordEncoder.encode("Admin123!"));
+                admin.setUloga(Uloga.admin);
+                admin.setStatus(StatusKorisnika.odobren);
+
+                when(korisnikRepository.findByKorisnickoIme("admin")).thenReturn(Optional.of(admin));
+
+        String requestJson = """
+                {
+                  "username": "admin",
+                  "password": "Admin123!"
+                }
+                """;
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestJson))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("Nije moguce se prijaviti kao admin preko ove stranice"));
     }
 
     @Test
@@ -170,7 +196,13 @@ class AuthControllerTest {
                 when(korisnikRepository.existsByEmail("nikola@firma.rs")).thenReturn(false);
                 when(firmaRepository.findByPib("123456789")).thenReturn(Optional.empty());
                 when(firmaRepository.findByMaticniBroj("12345678")).thenReturn(Optional.empty());
-                when(firmaRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+                when(firmaRepository.save(any())).thenAnswer(invocation -> {
+                        com.coworking_hub.app.model.Firma saved = invocation.getArgument(0);
+                        saved.setId(99L);
+                        return saved;
+                });
+                when(korisnikRepository.countByFirmaIdAndUlogaAndStatusIn(eq(99L), eq(Uloga.menadzer), any()))
+                        .thenReturn(0L);
                 when(korisnikRepository.save(any(Korisnik.class))).thenAnswer(invocation -> {
                         Korisnik saved = invocation.getArgument(0);
                         saved.setId(44L);
@@ -210,6 +242,50 @@ class AuthControllerTest {
         verify(korisnikRepository).save(any(Korisnik.class));
     }
 
+                @Test
+                void registerManagerShouldRejectWhenFirmAlreadyHasTwoManagers() throws Exception {
+                                                                when(korisnikRepository.existsByKorisnickoIme("treci_menadzer")).thenReturn(false);
+                                                                when(korisnikRepository.existsByEmail("treci@firma.rs")).thenReturn(false);
+
+                                                                com.coworking_hub.app.model.Firma postojecaFirma = new com.coworking_hub.app.model.Firma();
+                                                                postojecaFirma.setId(5L);
+                                                                postojecaFirma.setNaziv("Coworking Plus");
+                                                                postojecaFirma.setMaticniBroj("12345678");
+                                                                postojecaFirma.setPib("123456789");
+
+                                                                when(firmaRepository.findByPib("123456789")).thenReturn(Optional.of(postojecaFirma));
+                                                                when(korisnikRepository.countByFirmaIdAndUlogaAndStatusIn(eq(5L), eq(Uloga.menadzer), any()))
+                                                                                                .thenReturn(2L);
+
+                                MockMultipartFile dataPart = new MockMultipartFile(
+                                                                "data",
+                                                                "",
+                                                                "application/json",
+                                                                """
+                                                                                                {
+                                                                                                        "username": "treci_menadzer",
+                                                                                                        "password": "Menadzer1!",
+                                                                                                        "ime": "Jovan",
+                                                                                                        "prezime": "Jovanovic",
+                                                                                                        "telefon": "+38164111111",
+                                                                                                        "email": "treci@firma.rs",
+                                                                                                        "firma": {
+                                                                                                                "naziv": "Coworking Plus",
+                                                                                                                "adresa": "Bulevar 1, Beograd",
+                                                                                                                "maticniBroj": "12345678",
+                                                                                                                "pib": "123456789"
+                                                                                                        }
+                                                                                                }
+                                                                                                """.getBytes()
+                                );
+
+                                mockMvc.perform(multipart("/api/auth/register/manager")
+                                                                                                .file(dataPart)
+                                                                                                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+                                                                .andExpect(status().isConflict())
+                                                                .andExpect(jsonPath("$.message").value("Firma vec ima maksimalno 2 menadzera (odobrena ili na cekanju)."));
+                }
+
     @Test
     void passwordResetFlowShouldWork() throws Exception {
         Korisnik korisnik = new Korisnik();
@@ -233,15 +309,14 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
                 .andExpect(status().isAccepted())
-                .andExpect(jsonPath("$.resetUrl").exists())
+                .andExpect(jsonPath("$.token").exists())
                 .andExpect(jsonPath("$.expiresInSeconds").value(1800))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
         JsonNode root = objectMapper.readTree(response);
-        String resetUrl = root.get("resetUrl").asText();
-        String token = resetUrl.substring(resetUrl.indexOf("token=") + 6);
+        String token = root.get("token").asText();
 
         TokenZaResetLozinke tokenEntity = new TokenZaResetLozinke();
         tokenEntity.setToken(token);
@@ -261,6 +336,15 @@ class AuthControllerTest {
         verify(korisnikRepository).save(any(Korisnik.class));
                 verify(tokenZaResetLozinkeRepository, times(2)).save(any(TokenZaResetLozinke.class));
     }
+
+        @Test
+        void passwordResetConfirmShouldRejectInvalidPasswordFormat() throws Exception {
+                mockMvc.perform(post("/api/auth/password-reset/confirm")
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content("{\"token\":\"some-token\",\"newPassword\":\"slaba\"}"))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.message").value("Lozinka nije u ispravnom formatu"));
+        }
 
     @Test
     void logoutShouldReturnOk() throws Exception {
