@@ -28,9 +28,6 @@ public class SlikaProstora {
     private String putanjaSlike;
 
     @Column(nullable = false)
-    private Boolean glavna;
-
-    @Column(nullable = false)
     private Integer redosled;
 
     @Column(nullable = false, updatable = false)
@@ -58,14 +55,6 @@ public class SlikaProstora {
 
     public void setPutanjaSlike(String putanjaSlike) {
         this.putanjaSlike = putanjaSlike;
-    }
-
-    public Boolean getGlavna() {
-        return glavna;
-    }
-
-    public void setGlavna(Boolean glavna) {
-        this.glavna = glavna;
     }
 
     public Integer getRedosled() {

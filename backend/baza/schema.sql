@@ -115,13 +115,12 @@ CREATE INDEX idx_prostori_firma      ON prostori(firma_id);
 CREATE INDEX idx_prostori_menadzer   ON prostori(menadzer_id);
 
 -- =============================================================================
--- 4. SLIKE_PROSTORA (slike: 1 glavna + do 5 thumbnail-a = max 6)
+-- 4. SLIKE_PROSTORA (sve slike su ravnopravne, max 6 po prostoru)
 -- =============================================================================
 CREATE TABLE slike_prostora (
     id              BIGINT          AUTO_INCREMENT PRIMARY KEY,
     prostor_id      BIGINT          NOT NULL,
     putanja_slike   VARCHAR(500)    NOT NULL,
-    glavna          BOOLEAN         NOT NULL DEFAULT FALSE,
     redosled        INT             NOT NULL DEFAULT 0,
     kreirano        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -500,7 +499,7 @@ END //
 DELIMITER ;
 
 -- ---------------------------------------------------------------------------
--- T7: Ogranicenje broja slika po prostoru (max 6: 1 glavna + 5 thumbnail)
+-- T7: Ogranicenje broja slika po prostoru (max 6)
 -- ---------------------------------------------------------------------------
 DELIMITER //
 CREATE TRIGGER trg_max_slika_prostora
@@ -515,7 +514,7 @@ BEGIN
 
     IF broj_slika >= 6 THEN
         SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Prostor moze imati najvise 6 slika (1 glavna + 5 thumbnail).';
+            SET MESSAGE_TEXT = 'Prostor moze imati najvise 6 slika.';
     END IF;
 END //
 DELIMITER ;
@@ -544,7 +543,7 @@ VALUES
         'ana',
         '$2a$10$aX1PXw7FEDI53Blgr.F8yeECrhbjAYt0ZJWyfU35KwLWkp0QBa61O',
         'Ana',
-        'Anić',
+        'Anic',
         '+381611110001',
         'ana@coworkinghub.rs',
         '/uploads/profiles/ana.jpg',
@@ -555,7 +554,7 @@ VALUES
         'marko',
         '$2a$10$G1dQ2g.FWVwhzRdnV0pSJOK0UBtUfxzkvYbTwvBQCwaVBWvE/k0R6',
         'Marko',
-        'Marković',
+        'Markovic',
         '+381611110002',
         'marko@coworkinghub.rs',
         '/uploads/profiles/marko.jpg',
@@ -566,7 +565,7 @@ VALUES
         'maja',
         '$2a$10$0fV6iDi9D9xgUSSaXtmuiOWB9thYq6.hyaLP0Iy8c1RMwAdt8htZe',
         'Maja',
-        'Majić',
+        'Majic',
         '+381611110003',
         'maja@coworkinghub.rs',
         '/uploads/profiles/maja.jpg',
@@ -577,10 +576,172 @@ VALUES
         'petar',
         '$2a$10$TmcouBP7/AXDpN.1T4Vt3O/bnFMi8nyginEDBrSIK8AWJpl3SdR5i',
         'Petar',
-        'Petrović',
+        'Petrovic',
         '+381611110004',
         'petar@coworkinghub.rs',
         '/uploads/profiles/petar.jpg',
         'clan',
         'odobren'
     );
+
+-- =============================================================================
+-- POCETNI PODACI: firme, menadzeri, prostori i slike prostora
+-- =============================================================================
+
+INSERT INTO firme (naziv, adresa, maticni_broj, pib)
+VALUES
+    ('Coworking Plus', 'Bulevar 1, Beograd', '12345678', '123456789'),
+    ('Smart Office Hub', 'Cara Dusana 12, Novi Sad', '23456789', '234567891'),
+    ('Nis Workpoint', 'Obrenoviceva 18, Nis', '34567890', '345678912');
+
+-- Lozinka za menadzere: User123! (bcrypt hash)
+INSERT INTO korisnici (korisnicko_ime, lozinka, ime, prezime, telefon, email, profilna_slika, uloga, status, firma_id)
+VALUES
+    (
+        'menadzer_beograd',
+        '$2a$10$aX1PXw7FEDI53Blgr.F8yeECrhbjAYt0ZJWyfU35KwLWkp0QBa61O',
+        'Nikola',
+        'Ilic',
+        '+381641234561',
+        'nikola.ilic@coworkinghub.rs',
+        '/uploads/profiles/default-profile.png',
+        'menadzer',
+        'odobren',
+        (SELECT id FROM firme WHERE pib = '123456789')
+    ),
+    (
+        'menadzer_novisad',
+        '$2a$10$aX1PXw7FEDI53Blgr.F8yeECrhbjAYt0ZJWyfU35KwLWkp0QBa61O',
+        'Milica',
+        'Jovanovic',
+        '+381641234562',
+        'milica.jovanovic@coworkinghub.rs',
+        '/uploads/profiles/default-profile.png',
+        'menadzer',
+        'odobren',
+        (SELECT id FROM firme WHERE pib = '234567891')
+    ),
+    (
+        'menadzer_nis',
+        '$2a$10$aX1PXw7FEDI53Blgr.F8yeECrhbjAYt0ZJWyfU35KwLWkp0QBa61O',
+        'Stefan',
+        'Petrovic',
+        '+381641234563',
+        'stefan.petrovic@coworkinghub.rs',
+        '/uploads/profiles/default-profile.png',
+        'menadzer',
+        'odobren',
+        (SELECT id FROM firme WHERE pib = '345678912')
+    );
+
+INSERT INTO prostori (
+    naziv,
+    grad,
+    adresa,
+    opis,
+    cena_po_satu,
+    firma_id,
+    menadzer_id,
+    status,
+    prag_kazni,
+    geografska_sirina,
+    geografska_duzina
+)
+VALUES
+    (
+        'Hub Dorcol',
+        'Beograd',
+        'Cara Dusana 10',
+        'Moderan coworking prostor u centru grada.',
+        12.50,
+        (SELECT id FROM firme WHERE pib = '123456789'),
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'menadzer_beograd'),
+        'odobren',
+        3,
+        44.8176,
+        20.4633
+    ),
+    (
+        'Hub Novi Beograd',
+        'Beograd',
+        'Bulevar Zorana Djindjica 1',
+        'Veliki prostor za timove i freelance korisnike.',
+        14.00,
+        (SELECT id FROM firme WHERE pib = '123456789'),
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'menadzer_beograd'),
+        'odobren',
+        3,
+        44.8100,
+        20.4000
+    ),
+    (
+        'NS Business Hub',
+        'Novi Sad',
+        'Bulevar Oslobodjenja 30',
+        'Mirna atmosfera i kompletno opremljene kancelarije.',
+        11.00,
+        (SELECT id FROM firme WHERE pib = '234567891'),
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'menadzer_novisad'),
+        'odobren',
+        4,
+        45.2551,
+        19.8452
+    ),
+    (
+        'Nis Coworking Center',
+        'Nis',
+        'Obrenoviceva 25',
+        'Fleksibilan prostor sa salama za sastanke.',
+        10.00,
+        (SELECT id FROM firme WHERE pib = '345678912'),
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'menadzer_nis'),
+        'odobren',
+        3,
+        43.3209,
+        21.8958
+    ),
+    (
+        'Nis Tech Hub',
+        'Nis',
+        'Vozdova 14',
+        'Coworking za startup timove i radionice.',
+        9.50,
+        (SELECT id FROM firme WHERE pib = '345678912'),
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'menadzer_nis'),
+        'odobren',
+        2,
+        43.3187,
+        21.8961
+    );
+
+INSERT INTO slike_prostora (prostor_id, putanja_slike, redosled)
+VALUES
+    ((SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1), '/uploads/spaces/1/i1.jpg', 0),
+    ((SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1), '/uploads/spaces/1/i2.jpg', 1),
+    ((SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1), '/uploads/spaces/1/i3.jpg', 2),
+    ((SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1), '/uploads/spaces/1/i4.jpg', 3),
+    ((SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1), '/uploads/spaces/1/i5.jpg', 4),
+
+    ((SELECT id FROM prostori WHERE naziv = 'Hub Novi Beograd' LIMIT 1), '/uploads/spaces/2/i1.jpg', 0),
+    ((SELECT id FROM prostori WHERE naziv = 'Hub Novi Beograd' LIMIT 1), '/uploads/spaces/2/i2.jpg', 1),
+    ((SELECT id FROM prostori WHERE naziv = 'Hub Novi Beograd' LIMIT 1), '/uploads/spaces/2/i3.jpg', 2),
+    ((SELECT id FROM prostori WHERE naziv = 'Hub Novi Beograd' LIMIT 1), '/uploads/spaces/2/i4.jpg', 3),
+    ((SELECT id FROM prostori WHERE naziv = 'Hub Novi Beograd' LIMIT 1), '/uploads/spaces/2/i5.jpg', 4),
+
+    ((SELECT id FROM prostori WHERE naziv = 'NS Business Hub' LIMIT 1), '/uploads/spaces/3/i1.jpg', 0),
+    ((SELECT id FROM prostori WHERE naziv = 'NS Business Hub' LIMIT 1), '/uploads/spaces/3/i2.jpg', 1),
+    ((SELECT id FROM prostori WHERE naziv = 'NS Business Hub' LIMIT 1), '/uploads/spaces/3/i3.jpg', 2),
+    ((SELECT id FROM prostori WHERE naziv = 'NS Business Hub' LIMIT 1), '/uploads/spaces/3/i4.jpg', 3),
+    ((SELECT id FROM prostori WHERE naziv = 'NS Business Hub' LIMIT 1), '/uploads/spaces/3/i5.jpg', 4),
+
+    ((SELECT id FROM prostori WHERE naziv = 'Nis Coworking Center' LIMIT 1), '/uploads/spaces/4/i1.jpg', 0),
+    ((SELECT id FROM prostori WHERE naziv = 'Nis Coworking Center' LIMIT 1), '/uploads/spaces/4/i2.jpg', 1),
+    ((SELECT id FROM prostori WHERE naziv = 'Nis Coworking Center' LIMIT 1), '/uploads/spaces/4/i3.jpg', 2),
+    ((SELECT id FROM prostori WHERE naziv = 'Nis Coworking Center' LIMIT 1), '/uploads/spaces/4/i4.jpg', 3),
+    ((SELECT id FROM prostori WHERE naziv = 'Nis Coworking Center' LIMIT 1), '/uploads/spaces/4/i5.jpg', 4),
+
+    ((SELECT id FROM prostori WHERE naziv = 'Nis Tech Hub' LIMIT 1), '/uploads/spaces/5/i1.jpg', 0),
+    ((SELECT id FROM prostori WHERE naziv = 'Nis Tech Hub' LIMIT 1), '/uploads/spaces/5/i2.jpg', 1),
+    ((SELECT id FROM prostori WHERE naziv = 'Nis Tech Hub' LIMIT 1), '/uploads/spaces/5/i3.jpg', 2),
+    ((SELECT id FROM prostori WHERE naziv = 'Nis Tech Hub' LIMIT 1), '/uploads/spaces/5/i4.jpg', 3),
+    ((SELECT id FROM prostori WHERE naziv = 'Nis Tech Hub' LIMIT 1), '/uploads/spaces/5/i5.jpg', 4);

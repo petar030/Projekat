@@ -1,1 +1,103 @@
-<p>start-component works!</p>
+<div class="start-container">
+	<h1>Coworking Hub</h1>
+
+	<section class="top-section">
+		<h2>TOP 5 prostora</h2>
+		<table class="table" *ngIf="top5Spaces.length > 0; else noTop5">
+			<thead>
+				<tr>
+					<th>Naziv</th>
+					<th>Grad</th>
+					<th>Lajkovi</th>
+					<th>Dislajkovi</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr *ngFor="let s of top5Spaces">
+					<td>{{ s.naziv }}</td>
+					<td>{{ s.grad }}</td>
+					<td>{{ s.likes }}</td>
+					<td>{{ s.dislikes }}</td>
+				</tr>
+			</tbody>
+		</table>
+		<ng-template #noTop5>
+			<p>Nema podataka za TOP 5.</p>
+		</ng-template>
+	</section>
+
+	<section class="search-section">
+		<h2>Pretraga prostora</h2>
+
+		<form (ngSubmit)="searchSpaces()" class="search-form">
+			<div class="form-group">
+				<label for="name">Naziv prostora</label>
+				<input
+					id="name"
+					type="text"
+					name="name"
+					[(ngModel)]="searchName"
+					placeholder="npr. Hub"
+				/>
+			</div>
+
+			<div class="form-group">
+				<label for="cities">Gradovi</label>
+				<details id="cities">
+					<summary>{{ selectedCitiesLabel() }}</summary>
+					<div>
+						<div *ngFor="let city of cities">
+							<label>
+								<input
+									type="checkbox"
+									[checked]="selectedCities.includes(city)"
+									(change)="toggleCity(city, $any($event.target).checked)"
+								/>
+								{{ city }}
+							</label>
+						</div>
+					</div>
+				</details>
+			</div>
+
+			<div class="actions">
+				<button type="submit">Pretrazi</button>
+				<button type="button" class="secondary" (click)="clearSearch()">Ocisti</button>
+			</div>
+		</form>
+
+		<p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+		<p *ngIf="loading">Ucitavanje...</p>
+
+		<table class="table" *ngIf="!loading && spaces.length > 0">
+			<thead>
+				<tr>
+					<th (click)="changeSort('naziv')" class="sortable">
+						Naziv
+						<span *ngIf="sortBy === 'naziv'">{{ sortDir === 'asc' ? '↑' : '↓' }}</span>
+					</th>
+					<th (click)="changeSort('grad')" class="sortable">
+						Grad
+						<span *ngIf="sortBy === 'grad'">{{ sortDir === 'asc' ? '↑' : '↓' }}</span>
+					</th>
+					<th>Adresa</th>
+					<th>Firma</th>
+					<th>Lajkovi</th>
+					<th>Dislajkovi</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr *ngFor="let s of spaces">
+					<td>{{ s.naziv }}</td>
+					<td>{{ s.grad }}</td>
+					<td>{{ s.adresa }}</td>
+					<td>{{ s.firmaNaziv }}</td>
+					<td>{{ s.likes }}</td>
+					<td>{{ s.dislikes }}</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<p *ngIf="!loading && spaces.length === 0">Nema rezultata za zadatu pretragu.</p>
+	</section>
+</div>

@@ -290,8 +290,7 @@ Response `200`:
       "naziv": "Hub Dorcol",
       "grad": "Beograd",
       "likes": 54,
-      "dislikes": 3,
-      "mainImage": "/uploads/spaces/10/main.jpg"
+      "dislikes": 3
     }
   ]
 }
@@ -319,7 +318,6 @@ Response `200`:
   - `cities` (opciono, vise vrednosti)
   - `sortBy` = `naziv|grad`
   - `sortDir` = `asc|desc`
-  - `page`, `size`
 
 Response `200`:
 
@@ -333,14 +331,9 @@ Response `200`:
       "adresa": "Cara Dusana 10",
       "firmaNaziv": "Coworking Plus",
       "likes": 54,
-      "dislikes": 3,
-      "mainImage": "/uploads/spaces/10/main.jpg"
+      "dislikes": 3
     }
-  ],
-  "page": 0,
-  "size": 10,
-  "totalElements": 1,
-  "totalPages": 1
+  ]
 }
 ```
 
@@ -375,13 +368,11 @@ Response `200`:
     "likes": 54,
     "dislikes": 3
   },
-  "images": {
-    "main": "/uploads/spaces/10/main.jpg",
-    "thumbnails": [
-      "/uploads/spaces/10/t1.jpg",
-      "/uploads/spaces/10/t2.jpg"
-    ]
-  },
+  "images": [
+    "/uploads/spaces/10/i1.jpg",
+    "/uploads/spaces/10/i2.jpg",
+    "/uploads/spaces/10/i3.jpg"
+  ],
   "latestComments": [
     {
       "id": 88,
@@ -861,22 +852,23 @@ Response `200`.
 - `POST /api/manager/spaces/{spaceId}/images`
 - Auth: `menadzer`
 - Content-Type: `multipart/form-data`
-- Part `mainImage` (opciono)
-- Part `thumbnails[]` (0-5)
+- Part `images[]` (obavezno: 1-6 fajlova)
 
 Response `201`:
 
 ```json
 {
   "spaceId": 10,
-  "images": {
-    "main": "/uploads/spaces/10/main.jpg",
-    "thumbnails": [
-      "/uploads/spaces/10/t1.jpg"
-    ]
-  }
+  "images": [
+    "/uploads/spaces/10/i1.jpg",
+    "/uploads/spaces/10/i2.jpg"
+  ]
 }
 ```
+
+Napomena:
+- Backend tretira sve slike prostora jednako (nema trajno oznacene "glavne" slike).
+- Frontend preko kolacica pamti koju sliku korisnik trenutno prikazuje kao glavnu u galeriji.
 
 ## 7.12 Brza konfiguracija iz JSON fajla
 
