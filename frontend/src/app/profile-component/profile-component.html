@@ -1,0 +1,68 @@
+<div class="login-container">
+  <h2>Moj profil</h2>
+
+  <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
+  <div class="success-message" *ngIf="successMessage">{{ successMessage }}</div>
+
+  <div *ngIf="profile">
+    <p><strong>Korisnicko ime:</strong> {{ profile.username }}</p>
+    <p><strong>Uloga:</strong> {{ profile.uloga }}</p>
+    <p><strong>Status:</strong> {{ profile.status }}</p>
+
+    <div *ngIf="profile.firma">
+      <p><strong>Firma:</strong> {{ profile.firma.naziv }}</p>
+    </div>
+
+    <div class="form-group" *ngIf="profile.profilnaSlika">
+      <img [src]="profile_image_url()" alt="Profilna slika" width="140" />
+    </div>
+  </div>
+
+  <form (ngSubmit)="update_profile()" #profileForm="ngForm">
+    <div class="form-group">
+      <label for="ime">Ime:</label>
+      <input id="ime" type="text" [(ngModel)]="ime" name="ime" required />
+    </div>
+
+    <div class="form-group">
+      <label for="prezime">Prezime:</label>
+      <input id="prezime" type="text" [(ngModel)]="prezime" name="prezime" required />
+    </div>
+
+    <div class="form-group">
+      <label for="telefon">Telefon:</label>
+      <input id="telefon" type="text" [(ngModel)]="telefon" name="telefon" required />
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email:</label>
+      <input id="email" type="email" [(ngModel)]="email" name="email" required />
+    </div>
+
+    <button type="submit">Sacuvaj profil</button>
+  </form>
+
+  <form (ngSubmit)="update_profile_image()" #imageForm="ngForm">
+    <div class="form-group">
+      <label for="profileImage">Nova profilna slika (jpg/png):</label>
+      <input id="profileImage" type="file" accept="image/jpeg,image/png" (change)="on_file_selected($event)" />
+      <small *ngIf="profileImageInfo">{{ profileImageInfo }}</small>
+    </div>
+
+    <button type="submit">Promeni profilnu sliku</button>
+  </form>
+
+  <form (ngSubmit)="update_password()" #passwordForm="ngForm">
+    <div class="form-group">
+      <label for="newPassword">Nova lozinka:</label>
+      <input id="newPassword" type="password" [(ngModel)]="newPassword" name="newPassword" required />
+    </div>
+
+    <div class="form-group">
+      <label for="confirmNewPassword">Potvrda nove lozinke:</label>
+      <input id="confirmNewPassword" type="password" [(ngModel)]="confirmNewPassword" name="confirmNewPassword" required />
+    </div>
+
+    <button type="submit">Promeni lozinku</button>
+  </form>
+</div>

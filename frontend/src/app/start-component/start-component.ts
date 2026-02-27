@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { PublicService } from '../services/public/public-service';
 import { PublicHomeSpace, PublicSearchItem } from '../models/public/public-models';
 
@@ -13,6 +14,7 @@ import { PublicHomeSpace, PublicSearchItem } from '../models/public/public-model
 export class StartComponent implements OnInit {
 
   private publicService = inject(PublicService);
+  private router = inject(Router);
 
   top5Spaces: PublicHomeSpace[] = [];
   spaces: PublicSearchItem[] = [];
@@ -121,6 +123,20 @@ export class StartComponent implements OnInit {
       const compare = aValue.localeCompare(bValue, 'sr', { sensitivity: 'base' });
       return isAsc ? compare : -compare;
     });
+  }
+
+  openTop5Details(space: PublicHomeSpace): void {
+    if (!space.spaceId) {
+      return;
+    }
+    this.router.navigate(['/public_details', space.spaceId]);
+  }
+
+  openSearchDetails(space: PublicSearchItem): void {
+    if (!space.id) {
+      return;
+    }
+    this.router.navigate(['/public_details', space.id]);
   }
 
 }

@@ -1,1 +1,53 @@
-<p>public-details-component works!</p>
+<div>
+	<button type="button" (click)="backToStart()">Nazad</button>
+
+	<p *ngIf="loading">Ucitavanje...</p>
+	<p *ngIf="!loading && errorMessage">{{ errorMessage }}</p>
+
+	<div *ngIf="!loading && details">
+		<h2>{{ details.naziv }}</h2>
+		<p><strong>Grad:</strong> {{ details.grad }}</p>
+		<p><strong>Adresa:</strong> {{ details.adresa }}</p>
+		<p><strong>Opis:</strong> {{ details.opis }}</p>
+		<p><strong>Cena po satu:</strong> {{ details.cenaPoSatu }}</p>
+
+		<h3>Firma i menadzer</h3>
+		<p><strong>Firma:</strong> {{ details.firma?.naziv }}</p>
+		<p><strong>Menadzer:</strong> {{ details.menadzer?.imePrezime }}</p>
+
+		<h3>Reakcije</h3>
+		<p><strong>Lajkovi:</strong> {{ details.reactions?.likes }}</p>
+		<p><strong>Dislajkovi:</strong> {{ details.reactions?.dislikes }}</p>
+
+		<h3>Galerija</h3>
+		<div *ngIf="details.images && details.images.length > 0; else noImages">
+			<img [src]="selectedImageUrl()" alt="Glavna slika prostora" />
+			<div>
+				<button
+					type="button"
+					*ngFor="let image of details.images; let i = index"
+					(click)="selectImage(i)"
+				>
+					<img [src]="toImageUrl(image)" [alt]="'Slika ' + (i + 1)" width="90" />
+				</button>
+			</div>
+		</div>
+		<ng-template #noImages>
+			<p>Nema dostupnih slika.</p>
+		</ng-template>
+
+		<!-- <h3>Poslednjih 10 komentara</h3>
+		<div *ngIf="details.latestComments && details.latestComments.length > 0; else noComments">
+			<div *ngFor="let comment of details.latestComments">
+				<p>
+					<strong>{{ comment.username }}</strong>
+					({{ comment.createdAt | date:'dd.MM.yyyy HH:mm' }})
+				</p>
+				<p>{{ comment.text }}</p>
+			</div>
+		</div>
+		<ng-template #noComments>
+			<p>Nema komentara.</p>
+		</ng-template> -->
+	</div>
+</div>

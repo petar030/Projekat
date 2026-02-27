@@ -8,16 +8,16 @@
 				<tr>
 					<th>Naziv</th>
 					<th>Grad</th>
-					<th>Lajkovi</th>
-					<th>Dislajkovi</th>
+					<th>Akcija</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr *ngFor="let s of top5Spaces">
 					<td>{{ s.naziv }}</td>
 					<td>{{ s.grad }}</td>
-					<td>{{ s.likes }}</td>
-					<td>{{ s.dislikes }}</td>
+					<td>
+						<button type="button" (click)="openTop5Details(s)">Detalji</button>
+					</td>
 				</tr>
 			</tbody>
 		</table>
@@ -80,20 +80,16 @@
 						Grad
 						<span *ngIf="sortBy === 'grad'">{{ sortDir === 'asc' ? '↑' : '↓' }}</span>
 					</th>
-					<th>Adresa</th>
-					<th>Firma</th>
-					<th>Lajkovi</th>
-					<th>Dislajkovi</th>
+					<th>Akcija</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr *ngFor="let s of spaces">
 					<td>{{ s.naziv }}</td>
 					<td>{{ s.grad }}</td>
-					<td>{{ s.adresa }}</td>
-					<td>{{ s.firmaNaziv }}</td>
-					<td>{{ s.likes }}</td>
-					<td>{{ s.dislikes }}</td>
+					<td>
+						<button type="button" (click)="openSearchDetails(s)">Detalji</button>
+					</td>
 				</tr>
 			</tbody>
 		</table>

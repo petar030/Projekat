@@ -1,0 +1,44 @@
+<app-profile-component></app-profile-component>
+
+<div class="login-container">
+	<h2>Moje rezervacije</h2>
+
+	<div class="error-message" *ngIf="reservationsError">{{ reservationsError }}</div>
+	<div class="success-message" *ngIf="reservationsSuccess">{{ reservationsSuccess }}</div>
+
+	<div *ngIf="reservations.length === 0 && !reservationsError">
+		Nema rezervacija za prikaz.
+	</div>
+
+	<div *ngIf="reservations.length > 0">
+		<table>
+			<thead>
+				<tr>
+					<th>ID</th>
+					<th>Prostor</th>
+					<th>Grad</th>
+					<th>Od</th>
+					<th>Do</th>
+					<th>Status</th>
+					<th>Otkazivanje</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr *ngFor="let reservation of reservations">
+					<td>{{ reservation.id }}</td>
+					<td>{{ reservation.spaceName }}</td>
+					<td>{{ reservation.city }}</td>
+					<td>{{ reservation.from }}</td>
+					<td>{{ reservation.to }}</td>
+					<td>{{ reservation.status }}</td>
+					<td>
+						<button *ngIf="reservation.cancellable" type="button" (click)="cancel_reservation(reservation)">
+							Otkazi
+						</button>
+						<span *ngIf="!reservation.cancellable">Nije moguce</span>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</div>

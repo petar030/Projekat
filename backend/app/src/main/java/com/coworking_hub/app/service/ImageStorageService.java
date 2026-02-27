@@ -4,7 +4,10 @@ import com.coworking_hub.app.config.UploadProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -16,6 +19,10 @@ import java.util.UUID;
 public class ImageStorageService {
 
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of("image/jpeg", "image/png");
+    private static final int PROFILE_MIN_WIDTH = 100;
+    private static final int PROFILE_MIN_HEIGHT = 100;
+    private static final int PROFILE_MAX_WIDTH = 300;
+    private static final int PROFILE_MAX_HEIGHT = 300;
 
     private final UploadProperties uploadProperties;
 
@@ -24,6 +31,7 @@ public class ImageStorageService {
     }
 
     public String storeProfileImage(MultipartFile file) {
+        validateProfileImageDimensions(file);
         return storeImage(file, "profiles");
     }
 
@@ -63,6 +71,28 @@ public class ImageStorageService {
         String contentType = file.getContentType();
         if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase(Locale.ROOT))) {
             throw new IllegalArgumentException("Dozvoljeni formati su JPG i PNG.");
+        }
+    }
+
+    private void validateProfileImageDimensions(MultipartFile file) {
+        try (InputStream inputStream = file.getInputStream()) {
+            BufferedImage image = ImageIO.read(inputStream);
+            if (image == null) {
+                throw new IllegalArgumentException("Neispravan format slike.");
+            }
+
+            int width = image.getWidth();
+            int height = image.getHeight();
+
+            if (width < PROFILE_MIN_WIDTH || height < PROFILE_MIN_HEIGHT) {
+                throw new IllegalArgumentException("Slika mora biti najmanje 100x100px.");
+            }
+
+            if (width > PROFILE_MAX_WIDTH || height > PROFILE_MAX_HEIGHT) {
+                throw new IllegalArgumentException("Slika moze biti najvise 300x300px.");
+            }
+        } catch (IOException ex) {
+            throw new IllegalStateException("Neuspesno citanje slike.", ex);
         }
     }
 

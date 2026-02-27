@@ -25,7 +25,7 @@ public class WebMvcSecurityConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(jwtAuthInterceptor)
-                .addPathPatterns("/api/member/**", "/api/manager/**", "/api/admin/**");
+                .addPathPatterns("/api/member/**", "/api/manager/**", "/api/admin/**", "/api/users/**");
     }
 
     @Override

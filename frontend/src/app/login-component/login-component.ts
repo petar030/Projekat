@@ -23,10 +23,13 @@ export class LoginComponent {
   login(){
     this.authService.login(this.username, this.password).subscribe({
       next: (response: any) => {
-        //localStorage.setItem('token', response.accessToken);
-        //this.router.navigate(['/home']);
+        localStorage.setItem('userToken', response.accessToken);
+        if(response.user.role === 'clan'){
+          this.router.navigate(['/member']);
+        } else if(response.user.role === 'menadzer'){
+          this.router.navigate(['/manager']);
+        }
         console.log(JSON.stringify(response, null, 2));
-        this.errorMessage = 'Uspesno prijavljivanje! (Token je ispisan u konzoli)';
       },
       error: (err) => {
         this.errorMessage = err.error.message || 'Greška prilikom prijavljivanja';

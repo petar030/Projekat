@@ -745,3 +745,175 @@ VALUES
     ((SELECT id FROM prostori WHERE naziv = 'Nis Tech Hub' LIMIT 1), '/uploads/spaces/5/i3.jpg', 2),
     ((SELECT id FROM prostori WHERE naziv = 'Nis Tech Hub' LIMIT 1), '/uploads/spaces/5/i4.jpg', 3),
     ((SELECT id FROM prostori WHERE naziv = 'Nis Tech Hub' LIMIT 1), '/uploads/spaces/5/i5.jpg', 4);
+
+-- =============================================================================
+-- POCETNI PODACI: otvoreni prostori, potvrdjene rezervacije i reakcije
+-- =============================================================================
+
+INSERT INTO otvoreni_prostori (prostor_id, broj_stolova)
+VALUES
+    ((SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1), 20),
+    ((SELECT id FROM prostori WHERE naziv = 'Hub Novi Beograd' LIMIT 1), 24),
+    ((SELECT id FROM prostori WHERE naziv = 'NS Business Hub' LIMIT 1), 16),
+    ((SELECT id FROM prostori WHERE naziv = 'Nis Coworking Center' LIMIT 1), 14),
+    ((SELECT id FROM prostori WHERE naziv = 'Nis Tech Hub' LIMIT 1), 12);
+
+INSERT INTO rezervacije (
+    clan_id,
+    prostor_id,
+    otvoreni_prostor_id,
+    kancelarija_id,
+    sala_id,
+    datum_od,
+    datum_do,
+    status
+)
+VALUES
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'ana'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-01-10 09:00:00',
+        '2026-01-10 11:00:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'marko'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-01-11 10:00:00',
+        '2026-01-11 12:00:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'maja'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-01-12 09:00:00',
+        '2026-01-12 10:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'petar'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-01-13 11:00:00',
+        '2026-01-13 13:00:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'ana'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Novi Beograd' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Novi Beograd' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-01-14 09:00:00',
+        '2026-01-14 11:00:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'marko'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Novi Beograd' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Novi Beograd' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-01-15 09:30:00',
+        '2026-01-15 10:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'maja'),
+        (SELECT id FROM prostori WHERE naziv = 'NS Business Hub' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'NS Business Hub' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-01-16 12:00:00',
+        '2026-01-16 14:00:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'petar'),
+        (SELECT id FROM prostori WHERE naziv = 'NS Business Hub' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'NS Business Hub' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-01-17 09:00:00',
+        '2026-01-17 10:00:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'ana'),
+        (SELECT id FROM prostori WHERE naziv = 'Nis Coworking Center' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Nis Coworking Center' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-01-18 10:00:00',
+        '2026-01-18 11:00:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'marko'),
+        (SELECT id FROM prostori WHERE naziv = 'Nis Tech Hub' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Nis Tech Hub' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-01-19 11:00:00',
+        '2026-01-19 12:30:00',
+        'potvrdjena'
+    );
+
+INSERT INTO rezervacije (
+    clan_id,
+    prostor_id,
+    otvoreni_prostor_id,
+    kancelarija_id,
+    sala_id,
+    datum_od,
+    datum_do,
+    status
+)
+VALUES
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'marko'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-03-10 10:00:00',
+        '2026-03-10 12:00:00',
+        'aktivna'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'marko'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Novi Beograd' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Novi Beograd' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-03-12 15:00:00',
+        '2026-03-12 17:00:00',
+        'otkazana'
+    );
+
+INSERT INTO reakcije (clan_id, prostor_id, tip)
+VALUES
+    ((SELECT id FROM korisnici WHERE korisnicko_ime = 'ana'),   (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1), 'svidjanje'),
+    ((SELECT id FROM korisnici WHERE korisnicko_ime = 'marko'), (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1), 'svidjanje'),
+    ((SELECT id FROM korisnici WHERE korisnicko_ime = 'maja'),  (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1), 'svidjanje'),
+    ((SELECT id FROM korisnici WHERE korisnicko_ime = 'petar'), (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1), 'nesvidjanje'),
+
+    ((SELECT id FROM korisnici WHERE korisnicko_ime = 'ana'),   (SELECT id FROM prostori WHERE naziv = 'Hub Novi Beograd' LIMIT 1), 'svidjanje'),
+    ((SELECT id FROM korisnici WHERE korisnicko_ime = 'marko'), (SELECT id FROM prostori WHERE naziv = 'Hub Novi Beograd' LIMIT 1), 'nesvidjanje'),
+
+    ((SELECT id FROM korisnici WHERE korisnicko_ime = 'maja'),  (SELECT id FROM prostori WHERE naziv = 'NS Business Hub' LIMIT 1), 'svidjanje'),
+    ((SELECT id FROM korisnici WHERE korisnicko_ime = 'petar'), (SELECT id FROM prostori WHERE naziv = 'NS Business Hub' LIMIT 1), 'svidjanje'),
+
+    ((SELECT id FROM korisnici WHERE korisnicko_ime = 'ana'),   (SELECT id FROM prostori WHERE naziv = 'Nis Coworking Center' LIMIT 1), 'nesvidjanje'),
+    ((SELECT id FROM korisnici WHERE korisnicko_ime = 'marko'), (SELECT id FROM prostori WHERE naziv = 'Nis Tech Hub' LIMIT 1), 'svidjanje');

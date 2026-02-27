@@ -316,8 +316,6 @@ Response `200`:
 - Query params:
   - `name` (opciono)
   - `cities` (opciono, vise vrednosti)
-  - `sortBy` = `naziv|grad`
-  - `sortDir` = `asc|desc`
 
 Response `200`:
 
@@ -414,6 +412,7 @@ Response `200`:
 
 - `PUT /api/users/me`
 - Auth: `clan|menadzer|admin`
+- Napomena: korisnicko ime (`username`) se ne menja ovim endpoint-om.
 
 Request:
 
@@ -443,6 +442,34 @@ Response `200`:
 }
 ```
 
+## 5.4 Promena lozinke
+
+- `PUT /api/users/me/password`
+- Auth: `clan|menadzer|admin`
+
+Request:
+
+```json
+{
+  "newPassword": "Nova123!"
+}
+```
+
+Validacija lozinke je ista kao pri registraciji:
+- mora poceti slovom
+- najmanje jedno veliko slovo
+- najmanje jedna cifra
+- najmanje jedan specijalni karakter
+- duzina 8-12 karaktera
+
+Response `200`:
+
+```json
+{
+  "message": "Lozinka je uspesno promenjena"
+}
+```
+
 ---
 
 ## 6) Clan - rezervacije, pretraga, reakcije i komentari
@@ -455,9 +482,9 @@ Response `200`:
   - `name`, `cities[]`
   - `type` = `otvoreni|kancelarija|sala` (tacno jedan)
   - `officeMinDesks` (opciono, samo za kancelarija)
-  - `sortBy`, `sortDir`, `page`, `size`
+  - bez sortiranja i paginacije (uskladjeno sa public pretragom)
 
-Response `200`: paged lista (slicno public), sa dodatnim poljima po tipu.
+Response `200`: lista (slicno public), sa dodatnim poljima po tipu.
 
 ## 6.2 Zauzetost za kalendar
 
@@ -522,7 +549,7 @@ Greske: `409` (preklapanje), `403` (ban), `400` (los interval).
 
 - `GET /api/member/reservations`
 - Auth: `clan`
-- Query params: `status`, `sortBy`, `sortDir`, `page`, `size`
+- Bez query parametara (vraca sve prethodne i trenutne rezervacije clana)
 
 Response `200`:
 
@@ -539,11 +566,7 @@ Response `200`:
       "status": "aktivna",
       "cancellable": true
     }
-  ],
-  "page": 0,
-  "size": 10,
-  "totalElements": 1,
-  "totalPages": 1
+  ]
 }
 ```
 
@@ -891,7 +914,7 @@ Response `201`:
 
 - `GET /api/manager/reservations`
 - Auth: `menadzer`
-- Query params: `spaceId`, `status`, `from`, `to`, `page`, `size`
+- Query params: `spaceId`, `status`, `from`, `to`
 
 Response `200`:
 
@@ -909,11 +932,7 @@ Response `200`:
       "status": "aktivna",
       "canConfirmOrNoShow": true
     }
-  ],
-  "page": 0,
-  "size": 10,
-  "totalElements": 1,
-  "totalPages": 1
+  ]
 }
 ```
 
@@ -1048,7 +1067,7 @@ Response `200`:
 
 - `GET /api/admin/users`
 - Auth: `admin`
-- Query params: `role`, `status`, `search`, `page`, `size`, `sortBy`, `sortDir`
+- Query params: `role`, `status`, `search`, `sortBy`, `sortDir`
 
 Response `200`:
 
@@ -1065,11 +1084,7 @@ Response `200`:
       "role": "clan",
       "status": "odobren"
     }
-  ],
-  "page": 0,
-  "size": 20,
-  "totalElements": 1,
-  "totalPages": 1
+  ]
 }
 ```
 
