@@ -486,14 +486,26 @@ Response `200`:
 
 Response `200`: lista (slicno public), sa dodatnim poljima po tipu.
 
+Napomena: svaki rezultat sadrzi i `matchingSubspaceIds` (lista ID-jeva podprostora koji zadovoljavaju filter za izabrani `type`).
+
 ## 6.2 Zauzetost za kalendar
 
-- `GET /api/member/spaces/{spaceId}/availability`
+- `POST /api/member/spaces/{spaceId}/availability`
 - Auth: `clan`
-- Query params:
-  - `type` = `otvoreni|kancelarija|sala`
-  - `resourceId` (opciono za kancelarija/sala)
-  - `weekStart` (`YYYY-MM-DD`)
+
+Request:
+
+```json
+{
+  "type": "kancelarija",
+  "resourceIds": [34, 35, 36],
+  "weekStart": "2026-02-23"
+}
+```
+
+- `type` = `otvoreni|kancelarija|sala`
+- `resourceIds` = lista ID-jeva podprostora za izabrani tip (najcesce iz `matchingSubspaceIds` iz pretrage)
+- `weekStart` (`YYYY-MM-DD`)
 
 Response `200`:
 
@@ -501,12 +513,22 @@ Response `200`:
 {
   "spaceId": 10,
   "type": "kancelarija",
-  "resourceId": 34,
   "weekStart": "2026-02-23",
-  "busySlots": [
+  "resources": [
     {
-      "from": "2026-02-23T09:00:00",
-      "to": "2026-02-23T12:00:00"
+      "resourceId": 34,
+      "resourceName": "Office A",
+      "busySlots": [
+        {
+          "from": "2026-02-23T09:00:00",
+          "to": "2026-02-23T12:00:00"
+        }
+      ]
+    },
+    {
+      "resourceId": 35,
+      "resourceName": "Office B",
+      "busySlots": []
     }
   ]
 }

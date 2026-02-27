@@ -11,6 +11,7 @@ import com.coworking_hub.app.repository.ReakcijaRepository;
 import com.coworking_hub.app.repository.SlikaProstoraRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -134,6 +135,7 @@ public class PublicController {
     }
 
     @GetMapping("/spaces/{spaceId}")
+        @Transactional(readOnly = true)
     public ResponseEntity<?> spaceDetails(@PathVariable Long spaceId) {
         Optional<Prostor> spaceOptional = prostorRepository.findByIdAndStatus(spaceId, StatusProstora.odobren);
         if (spaceOptional.isEmpty()) {

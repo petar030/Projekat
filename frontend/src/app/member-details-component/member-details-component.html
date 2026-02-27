@@ -1,0 +1,67 @@
+<div>
+	<h2>Detalji prostora</h2>
+
+	<p *ngIf="loading">Ucitavanje...</p>
+	<p *ngIf="!loading && errorMessage">{{ errorMessage }}</p>
+
+	<div *ngIf="!loading && details">
+		<p><strong>Naziv:</strong> {{ details.naziv }}</p>
+		<p><strong>Grad:</strong> {{ details.grad }}</p>
+		<p><strong>Adresa:</strong> {{ details.adresa }}</p>
+		<p><strong>Firma:</strong> {{ details.firma?.naziv }}</p>
+		<p><strong>Menadzer:</strong> {{ details.menadzer?.imePrezime }}</p>
+
+		<h3>Duži opis</h3>
+		<p>{{ details.opis || 'Nema opisa.' }}</p>
+
+		<h3>Galerija slika</h3>
+		<div *ngIf="details.images && details.images.length > 0; else noImages">
+			<img [src]="selectedImageUrl()" alt="Glavna slika prostora" />
+			<div>
+				<button
+					type="button"
+					*ngFor="let image of details.images; let i = index"
+					(click)="selectImage(i)"
+				>
+					<img [src]="toImageUrl(image)" [alt]="'Slika ' + (i + 1)" width="90" />
+				</button>
+			</div>
+		</div>
+		<ng-template #noImages>
+			<p>Nema dostupnih slika.</p>
+		</ng-template>
+
+		<h3>Lokacija na mapi</h3>
+		<div *ngIf="mapUrl; else noMap">
+			<iframe
+				[src]="mapUrl"
+				width="100%"
+				height="320"
+				loading="lazy"
+				title="Mapa prostora"
+			></iframe>
+		</div>
+		<ng-template #noMap>
+			<p>Lokacija na mapi nije dostupna za ovaj prostor.</p>
+		</ng-template>
+
+		<h3>Poslednjih 10 komentara</h3>
+		<div *ngIf="details.latestComments && details.latestComments.length > 0; else noComments">
+			<div *ngFor="let comment of details.latestComments">
+				<p>
+					<strong>{{ comment.username }}</strong>
+					({{ comment.createdAt | date:'dd.MM.yyyy HH:mm' }})
+				</p>
+				<p>{{ comment.text }}</p>
+			</div>
+		</div>
+		<ng-template #noComments>
+			<p>Nema komentara.</p>
+		</ng-template>
+
+		<div>
+			<p><strong>Tip za rezervaciju:</strong> {{ selectedType }}</p>
+			<p><strong>ID-jevi podprostora:</strong> {{ matchingSubspaceIds.join(', ') || '-' }}</p>
+		</div>
+	</div>
+</div>

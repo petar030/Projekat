@@ -7,6 +7,7 @@ import { RegistrationComponent } from './registration-component/registration-com
 import { StartComponent } from './start-component/start-component';
 import { PublicDetailsComponent } from './public-details-component/public-details-component';
 import { MemberComponent } from './member-component/member-component';
+import { MemberDetailsComponent } from './member-details-component/member-details-component';
 import { ManagerComponent } from './manager-component/manager-component';
 import { AdminComponent } from './admin-component/admin-component';
 
@@ -19,6 +20,7 @@ export const routes: Routes = [
     {path: 'forgot-password', component: ForgottenPasswordComponent},
     {path: 'recovery/:token', component: RecoveryComponent},
     {path: 'member', component: MemberComponent},
+    {path: 'member_details/:id', component: MemberDetailsComponent},
     {path: 'manager', component: ManagerComponent},
     {path: 'admin', component: AdminComponent}
 ];

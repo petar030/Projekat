@@ -1,6 +1,11 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { MemberCancelReservationResponse, MemberReservationsResponse } from '../../models/member/member-models';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import {
+  MemberCancelReservationResponse,
+  MemberReservationsResponse,
+  MemberSearchRequest,
+  MemberSearchResponse
+} from '../../models/member/member-models';
 
 @Injectable({
   providedIn: 'root',
@@ -13,6 +18,33 @@ export class MemberService {
   reservations() {
     return this.client.get<MemberReservationsResponse>(`${this.apiUrl}/reservations`, {
       headers: this.auth_headers()
+    });
+  }
+
+  search_spaces(request: MemberSearchRequest) {
+    let params = new HttpParams();
+
+    if (request.name) {
+      params = params.set('name', request.name);
+    }
+
+    if (request.cities && request.cities.length > 0) {
+      request.cities.forEach(city => {
+        params = params.append('cities', city);
+      });
+    }
+
+    if (request.type) {
+      params = params.set('type', request.type);
+    }
+
+    if (request.type === 'kancelarija' && request.officeMinDesks !== undefined && request.officeMinDesks !== null) {
+      params = params.set('officeMinDesks', request.officeMinDesks);
+    }
+
+    return this.client.get<MemberSearchResponse>(`${this.apiUrl}/spaces`, {
+      headers: this.auth_headers(),
+      params
     });
   }
 

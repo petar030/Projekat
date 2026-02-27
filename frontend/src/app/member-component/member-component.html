@@ -42,3 +42,114 @@
 		</table>
 	</div>
 </div>
+
+<div class="login-container">
+	<h2>Pretraga i rezervacija</h2>
+
+	<p class="error" *ngIf="searchError">{{ searchError }}</p>
+
+	<form (ngSubmit)="search_spaces()" class="search-form">
+		<div class="form-group">
+			<label for="name">Naziv prostora</label>
+			<input id="name" type="text" name="name" [(ngModel)]="searchName" placeholder="npr. Hub" />
+		</div>
+
+		<div class="form-group">
+			<label for="cities">Gradovi</label>
+			<details id="cities">
+				<summary>{{ selected_cities_label() }}</summary>
+				<div>
+					<div *ngFor="let city of cities">
+						<label>
+							<input
+								type="checkbox"
+								[checked]="selectedCities.includes(city)"
+								(change)="toggle_city(city, $any($event.target).checked)"
+							/>
+							{{ city }}
+						</label>
+					</div>
+				</div>
+			</details>
+		</div>
+
+		<div class="form-group">
+			<label>Tip rezervacije</label>
+			<div>
+				<label>
+					<input
+						type="radio"
+						name="reservationType"
+						[checked]="is_type_selected('otvoreni')"
+						(change)="select_type('otvoreni')"
+					/>
+					Otvoreni prostor
+				</label>
+			</div>
+			<div>
+				<label>
+					<input
+						type="radio"
+						name="reservationType"
+						[checked]="is_type_selected('kancelarija')"
+						(change)="select_type('kancelarija')"
+					/>
+					Kancelarija
+				</label>
+				<input
+					*ngIf="selectedType === 'kancelarija'"
+					type="number"
+					[(ngModel)]="officeMinDesks"
+					name="officeMinDesks"
+					min="1"
+					placeholder="Broj mesta"
+				/>
+			</div>
+			<div>
+				<label>
+					<input
+						type="radio"
+						name="reservationType"
+						[checked]="is_type_selected('sala')"
+						(change)="select_type('sala')"
+					/>
+					Konferencijska sala (10-12)
+				</label>
+			</div>
+		</div>
+
+		<div class="actions">
+			<button type="submit">Pretrazi</button>
+			<button type="button" class="secondary" (click)="clear_search()">Ocisti</button>
+		</div>
+	</form>
+
+	<p *ngIf="searchLoading">Ucitavanje...</p>
+
+	<table class="table" *ngIf="!searchLoading && spaces.length > 0">
+		<thead>
+			<tr>
+				<th (click)="change_sort('naziv')" class="sortable">
+					Naziv
+					<span *ngIf="sortBy === 'naziv'">{{ sortDir === 'asc' ? '↑' : '↓' }}</span>
+				</th>
+				<th (click)="change_sort('grad')" class="sortable">
+					Grad
+					<span *ngIf="sortBy === 'grad'">{{ sortDir === 'asc' ? '↑' : '↓' }}</span>
+				</th>
+				<th>Akcija</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr *ngFor="let s of spaces">
+				<td>{{ s.naziv }}</td>
+				<td>{{ s.grad }}</td>
+				<td>
+					<button type="button" (click)="open_member_details(s)">Detalji</button>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<p *ngIf="!searchLoading && spaces.length === 0">Nema rezultata za zadatu pretragu.</p>
+</div>
