@@ -20,15 +20,20 @@ export class AdminLoginComponent {
   errorMessage: string = '';
 
   login() {
+    this.errorMessage = '';
+
     this.authService.admin_login(this.username, this.password).subscribe({
       next: (response: any) => {
         localStorage.setItem('userToken', response.accessToken);
         this.router.navigate(['/admin']);
-        console.log(JSON.stringify(response, null, 2));
       },
       error: (err) => {
-        this.errorMessage = err.error.message;
-        console.log('Greška prilikom admin prijavljivanja:', err);
+        if (err?.status === 0) {
+          this.errorMessage = 'Backend nije dostupan.';
+          return;
+        }
+
+        this.errorMessage = err?.error?.message ?? 'Neuspesna admin prijava.';
       }
     });
   }

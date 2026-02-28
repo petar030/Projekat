@@ -1,1 +1,130 @@
-<p>admin-component works!</p>
+<app-profile-component></app-profile-component>
+
+<div>
+	<h3>Admin panel</h3>
+
+	<p *ngIf="errorMessage">{{ errorMessage }}</p>
+	<p *ngIf="successMessage">{{ successMessage }}</p>
+
+	<h4>Korisnici</h4>
+	<div>
+		<input type="text" placeholder="Pretraga..." [(ngModel)]="search" />
+		<select [(ngModel)]="roleFilter">
+			<option value="">Sve uloge</option>
+			<option value="clan">clan</option>
+			<option value="menadzer">menadzer</option>
+			<option value="admin">admin</option>
+		</select>
+		<select [(ngModel)]="statusFilter">
+			<option value="">Svi statusi</option>
+			<option value="na_cekanju">na_cekanju</option>
+			<option value="odobren">odobren</option>
+			<option value="odbijen">odbijen</option>
+		</select>
+		<button type="button" (click)="load_users()">Primeni filtere</button>
+	</div>
+
+	<p *ngIf="usersLoading">Ucitavanje korisnika...</p>
+	<table *ngIf="!usersLoading && users.length > 0" border="1" cellspacing="0" cellpadding="6">
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>Username</th>
+				<th>Ime</th>
+				<th>Prezime</th>
+				<th>Email</th>
+				<th>Telefon</th>
+				<th>Uloga</th>
+				<th>Status</th>
+				<th>Akcije</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr *ngFor="let user of users">
+				<td>{{ user.id }}</td>
+				<td>{{ user.username }}</td>
+				<td>{{ user.ime }}</td>
+				<td>{{ user.prezime }}</td>
+				<td>{{ user.email }}</td>
+				<td>{{ user.telefon }}</td>
+				<td>{{ user.role }}</td>
+				<td>{{ user.status }}</td>
+				<td>
+					<button type="button" (click)="open_update(user)">Azuriraj</button>
+					<button type="button" (click)="delete_user(user.id)">Obrisi</button>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<div *ngIf="updateUserId">
+		<h4>Azuriranje korisnika (ID {{ updateUserId }})</h4>
+		<input type="text" placeholder="Ime" [(ngModel)]="updateIme" />
+		<input type="text" placeholder="Prezime" [(ngModel)]="updatePrezime" />
+		<input type="text" placeholder="Telefon" [(ngModel)]="updateTelefon" />
+		<input type="text" placeholder="Email" [(ngModel)]="updateEmail" />
+		<select [(ngModel)]="updateStatus">
+			<option value="na_cekanju">na_cekanju</option>
+			<option value="odobren">odobren</option>
+			<option value="odbijen">odbijen</option>
+		</select>
+		<button type="button" (click)="save_update()">Sacuvaj</button>
+		<button type="button" (click)="cancel_update()">Otkaži</button>
+	</div>
+
+	<h4>Neodobreni korisnici</h4>
+	<p *ngIf="registrationLoading">Ucitavanje zahteva...</p>
+	<table *ngIf="!registrationLoading && registrationRequests.length > 0" border="1" cellspacing="0" cellpadding="6">
+		<thead>
+			<tr>
+				<th>User ID</th>
+				<th>Username</th>
+				<th>Uloga</th>
+				<th>Status</th>
+				<th>Kreirano</th>
+				<th>Akcije</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr *ngFor="let request of registrationRequests">
+				<td>{{ request.userId }}</td>
+				<td>{{ request.username }}</td>
+				<td>{{ request.role }}</td>
+				<td>{{ request.status }}</td>
+				<td>{{ request.createdAt }}</td>
+				<td>
+					<button type="button" (click)="approve_registration(request.userId)">Odobri</button>
+					<button type="button" (click)="reject_registration(request.userId)">Odbij</button>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<h4>Prostori na cekanju</h4>
+	<p *ngIf="spaceLoading">Ucitavanje zahteva za prostore...</p>
+	<table *ngIf="!spaceLoading && spaceRequests.length > 0" border="1" cellspacing="0" cellpadding="6">
+		<thead>
+			<tr>
+				<th>Space ID</th>
+				<th>Naziv</th>
+				<th>Grad</th>
+				<th>Firma</th>
+				<th>Status</th>
+				<th>Akcije</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr *ngFor="let request of spaceRequests">
+				<td>{{ request.spaceId }}</td>
+				<td>{{ request.naziv }}</td>
+				<td>{{ request.grad }}</td>
+				<td>{{ request.firmaNaziv }}</td>
+				<td>{{ request.status }}</td>
+				<td>
+					<button type="button" (click)="approve_space(request.spaceId)">Odobri</button>
+					<button type="button" (click)="reject_space(request.spaceId)">Odbij</button>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</div>

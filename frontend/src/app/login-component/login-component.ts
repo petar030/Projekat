@@ -21,6 +21,8 @@ export class LoginComponent {
 
 
   login(){
+    this.errorMessage = '';
+
     this.authService.login(this.username, this.password).subscribe({
       next: (response: any) => {
         localStorage.setItem('userToken', response.accessToken);
@@ -36,10 +38,14 @@ export class LoginComponent {
           //console.log("Prijavljen menadzer, id: " + response.user.id);
           this.router.navigate(['/manager']);
         }
-        console.log(JSON.stringify(response, null, 2));
       },
       error: (err) => {
-        this.errorMessage = err.error.message || 'Greška prilikom prijavljivanja';
+        if (err?.status === 0) {
+          this.errorMessage = 'Backend nije dostupan. Proveri da li je server pokrenut.';
+          return;
+        }
+
+        this.errorMessage = err?.error?.message ?? 'Greska prilikom prijavljivanja';
       }
     });
   }
