@@ -1192,49 +1192,57 @@ Response `200`:
 }
 ```
 
-## 8.11 Statistika popularnosti prostora
+## 8.11 Lista prostora za admin statistiku
 
-- `GET /api/admin/stats/popularity`
+- `GET /api/admin/stats/spaces`
 - Auth: `admin`
-- Query params: `from`, `to`
 
 Response `200`:
 
 ```json
 {
-  "items": [
+  "spaces": [
     {
       "spaceId": 10,
-      "spaceName": "Hub Dorcol",
-      "likes": 54,
-      "dislikes": 3,
-      "comments": 18,
-      "reservations": 120
+      "spaceName": "Hub Dorcol"
     }
   ]
 }
 ```
 
-## 8.12 Statistika prihoda po prostoru
+## 8.12 Mesečna statistika za izabrani prostor
 
-- `GET /api/admin/stats/revenue`
+- `GET /api/admin/stats/space-monthly`
 - Auth: `admin`
-- Query params: `from`, `to`
+- Query params:
+  - `spaceId` (obavezno)
+  - `year` (obavezno)
 
 Response `200`:
 
 ```json
 {
+  "spaceId": 10,
+  "spaceName": "Hub Dorcol",
+  "year": 2026,
   "items": [
     {
-      "spaceId": 10,
-      "spaceName": "Hub Dorcol",
-      "revenue": 12500.5,
+      "month": 1,
+      "likes": 12,
+      "dislikes": 1,
+      "reservations": 34,
+      "revenue": 45200.0,
+      "currency": "RSD"
+    },
+    {
+      "month": 2,
+      "likes": 9,
+      "dislikes": 2,
+      "reservations": 29,
+      "revenue": 39800.0,
       "currency": "RSD"
     }
-  ],
-  "totalRevenue": 12500.5,
-  "currency": "RSD"
+  ]
 }
 ```
 
@@ -1270,7 +1278,7 @@ Da endpointi budu stabilni i jasni, backend treba da koristi odvojene DTO klase 
 - `CreateSpaceRequest`, `UpdateSpaceRequest`, `SpaceResponse`
 - `ManagerReservationResponse`, `MoveReservationRequest`
 - `AdminUserResponse`, `AdminUpdateUserRequest`
-- `StatsPopularityResponse`, `StatsRevenueResponse`
+- `AdminStatSpacesResponse`, `SpaceMonthlyStatsResponse`
 
 ---
 

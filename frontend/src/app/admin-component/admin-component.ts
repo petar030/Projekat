@@ -1,10 +1,14 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { BaseChartDirective } from 'ng2-charts';
+import { ChartConfiguration, ChartData } from 'chart.js';
 import { ProfileComponent } from '../profile-component/profile-component';
 import {
   AdminRegistrationRequestItem,
+  AdminSpaceMonthlyItem,
   AdminSpaceRequestItem,
+  AdminStatSpaceItem,
   AdminUpdateUserRequest,
   AdminUserItem
 } from '../models/admin/admin-models';
@@ -12,7 +16,7 @@ import { AdminService } from '../services/admin/admin-service';
 
 @Component({
   selector: 'app-admin-component',
-  imports: [CommonModule, FormsModule, ProfileComponent],
+  imports: [CommonModule, FormsModule, ProfileComponent, BaseChartDirective],
   templateUrl: './admin-component.html',
   styleUrl: './admin-component.css',
 })
@@ -28,6 +32,44 @@ export class AdminComponent implements OnInit {
 
   spaceRequests: AdminSpaceRequestItem[] = [];
   spaceLoading: boolean = false;
+
+  statsSpaces: AdminStatSpaceItem[] = [];
+  statsSpaceId?: number;
+  statsSpaceName: string = '';
+  statsItems: AdminSpaceMonthlyItem[] = [];
+  statsLoading: boolean = false;
+  totalRevenue: number = 0;
+  statsCurrency: string = 'RSD';
+
+  reactionsChartType: 'bar' = 'bar';
+  reactionsChartData: ChartData<'bar'> = { labels: [], datasets: [] };
+  reactionsChartOptions: ChartConfiguration<'bar'>['options'] = {
+    responsive: true,
+    scales: {
+      x: { stacked: false },
+      y: { beginAtZero: true }
+    }
+  };
+
+  reservationsChartType: 'bar' = 'bar';
+  reservationsChartData: ChartData<'bar'> = { labels: [], datasets: [] };
+  reservationsChartOptions: ChartConfiguration<'bar'>['options'] = {
+    responsive: true,
+    scales: {
+      y: { beginAtZero: true }
+    }
+  };
+
+  revenueChartType: 'line' = 'line';
+  revenueChartData: ChartData<'line'> = { labels: [], datasets: [] };
+  revenueChartOptions: ChartConfiguration<'line'>['options'] = {
+    responsive: true,
+    scales: {
+      y: { beginAtZero: true }
+    }
+  };
+
+  statsYear: number = 2026;
 
   search: string = '';
   roleFilter: string = '';
@@ -51,6 +93,7 @@ export class AdminComponent implements OnInit {
     this.load_users();
     this.load_registration_requests();
     this.load_space_requests();
+    this.load_stats_spaces();
   }
 
   load_users(): void {
@@ -229,6 +272,113 @@ export class AdminComponent implements OnInit {
         this.errorMessage = err?.error?.message ?? 'Neuspesno odbijanje prostora.';
       }
     });
+  }
+
+  load_stats_spaces(): void {
+    this.statsLoading = true;
+    this.adminService.stats_spaces().subscribe({
+      next: (response) => {
+        this.statsSpaces = response.spaces ?? [];
+        if (!this.statsSpaceId && this.statsSpaces.length > 0) {
+          this.statsSpaceId = this.statsSpaces[0].spaceId;
+        }
+        this.load_stats();
+      },
+      error: (err) => {
+        this.errorMessage = err?.error?.message ?? 'Neuspesno ucitavanje prostora za statistiku.';
+        this.statsLoading = false;
+      }
+    });
+  }
+
+  load_stats(): void {
+    if (!this.statsYear || this.statsYear < 2000 || this.statsYear > 2100) {
+      this.errorMessage = 'Neispravan interval za statistiku.';
+      this.statsLoading = false;
+      return;
+    }
+
+    if (!this.statsSpaceId) {
+      this.errorMessage = 'Izaberi prostor za statistiku.';
+      this.statsLoading = false;
+      return;
+    }
+
+    this.errorMessage = '';
+    this.statsLoading = true;
+
+    this.adminService.space_monthly_stats(this.statsSpaceId, this.statsYear).subscribe({
+      next: (response) => {
+        this.statsItems = response.items ?? [];
+        this.statsSpaceName = response.spaceName ?? '';
+        this.statsCurrency = this.statsItems[0]?.currency ?? 'RSD';
+        this.totalRevenue = this.statsItems.reduce((sum, item) => sum + (item.revenue ?? 0), 0);
+        this.rebuild_reactions_chart();
+        this.rebuild_reservations_chart();
+        this.rebuild_revenue_chart();
+        this.statsLoading = false;
+      },
+      error: (err) => {
+        this.errorMessage = err?.error?.message ?? 'Neuspesno ucitavanje statistike.';
+        this.statsLoading = false;
+      }
+    });
+  }
+
+  month_label(month?: number): string {
+    const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Maj', 'Jun', 'Jul', 'Avg', 'Sep', 'Okt', 'Nov', 'Dec'];
+    const index = (month ?? 1) - 1;
+    return labels[index] ?? String(month ?? '');
+  }
+
+  private rebuild_reactions_chart(): void {
+    const labels = Array.from({ length: 12 }, (_, index) => this.month_label(index + 1));
+    const likes = this.statsItems.map((item) => item.likes ?? 0);
+    const dislikes = this.statsItems.map((item) => item.dislikes ?? 0);
+
+    this.reactionsChartData = {
+      labels,
+      datasets: [
+        {
+          data: likes,
+          label: 'Like'
+        },
+        {
+          data: dislikes,
+          label: 'Dislike'
+        }
+      ]
+    };
+  }
+
+  private rebuild_reservations_chart(): void {
+    const labels = Array.from({ length: 12 }, (_, index) => this.month_label(index + 1));
+    const reservations = this.statsItems.map((item) => item.reservations ?? 0);
+
+    this.reservationsChartData = {
+      labels,
+      datasets: [
+        {
+          data: reservations,
+          label: 'Rezervacije'
+        }
+      ]
+    };
+  }
+
+  private rebuild_revenue_chart(): void {
+    const labels = Array.from({ length: 12 }, (_, index) => this.month_label(index + 1));
+    const values = this.statsItems.map((item) => item.revenue ?? 0);
+
+    this.revenueChartData = {
+      labels,
+      datasets: [
+        {
+          data: values,
+          label: `Prihod (${this.statsCurrency})`
+        }
+      ]
+    };
   }
 
 }

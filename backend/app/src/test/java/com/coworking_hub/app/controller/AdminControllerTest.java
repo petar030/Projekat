@@ -3,11 +3,17 @@ package com.coworking_hub.app.controller;
 import com.coworking_hub.app.model.Firma;
 import com.coworking_hub.app.model.Korisnik;
 import com.coworking_hub.app.model.Prostor;
+import com.coworking_hub.app.model.Reakcija;
+import com.coworking_hub.app.model.Rezervacija;
 import com.coworking_hub.app.model.enums.StatusKorisnika;
 import com.coworking_hub.app.model.enums.StatusProstora;
+import com.coworking_hub.app.model.enums.StatusRezervacije;
+import com.coworking_hub.app.model.enums.TipReakcije;
 import com.coworking_hub.app.model.enums.Uloga;
 import com.coworking_hub.app.repository.KorisnikRepository;
 import com.coworking_hub.app.repository.ProstorRepository;
+import com.coworking_hub.app.repository.ReakcijaRepository;
+import com.coworking_hub.app.repository.RezervacijaRepository;
 import com.coworking_hub.app.security.AuthenticatedUser;
 import com.coworking_hub.app.security.CurrentUserArgumentResolver;
 import com.coworking_hub.app.security.JwtAuthInterceptor;
@@ -43,9 +49,20 @@ class AdminControllerTest {
     @Mock
     private ProstorRepository prostorRepository;
 
+    @Mock
+    private ReakcijaRepository reakcijaRepository;
+
+    @Mock
+    private RezervacijaRepository rezervacijaRepository;
+
     @BeforeEach
     void setUp() {
-        AdminController adminController = new AdminController(korisnikRepository, prostorRepository);
+        AdminController adminController = new AdminController(
+            korisnikRepository,
+            prostorRepository,
+            reakcijaRepository,
+            rezervacijaRepository
+        );
         mockMvc = MockMvcBuilders.standaloneSetup(adminController)
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver())
                 .build();
@@ -167,6 +184,50 @@ class AdminControllerTest {
                 .andExpect(status().isNoContent());
     }
 
+
+            @Test
+            void statsSpacesShouldReturnApprovedSpaces() throws Exception {
+            when(prostorRepository.findAll()).thenReturn(List.of(
+                buildSpace(10L, "Hub Dorcol", StatusProstora.odobren),
+                buildSpace(11L, "Hub Novi Beograd", StatusProstora.na_cekanju)
+            ));
+
+            mockMvc.perform(get("/api/admin/stats/spaces")
+                    .requestAttr(JwtAuthInterceptor.AUTH_USER_ATTR, authenticatedAdmin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.spaces.length()").value(1))
+                .andExpect(jsonPath("$.spaces[0].spaceId").value(10))
+                .andExpect(jsonPath("$.spaces[0].spaceName").value("Hub Dorcol"));
+            }
+
+            @Test
+            void spaceMonthlyStatsShouldReturnAllMonthlyMetrics() throws Exception {
+            Prostor space = buildSpace(10L, "Hub Dorcol", StatusProstora.odobren);
+
+            when(prostorRepository.findById(10L)).thenReturn(Optional.of(space));
+            when(reakcijaRepository.findAll()).thenReturn(List.of(
+                buildReaction(10L, TipReakcije.svidjanje, LocalDateTime.of(2026, 2, 10, 10, 0)),
+                buildReaction(10L, TipReakcije.nesvidjanje, LocalDateTime.of(2026, 2, 11, 10, 0))
+            ));
+            when(rezervacijaRepository.findAll()).thenReturn(List.of(
+                buildReservation(10L, StatusRezervacije.potvrdjena, LocalDateTime.of(2026, 2, 13, 10, 0), LocalDateTime.of(2026, 2, 13, 12, 0))
+            ));
+
+            mockMvc.perform(get("/api/admin/stats/space-monthly")
+                    .param("spaceId", "10")
+                    .param("year", "2026")
+                    .requestAttr(JwtAuthInterceptor.AUTH_USER_ATTR, authenticatedAdmin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.spaceId").value(10))
+                .andExpect(jsonPath("$.year").value(2026))
+                .andExpect(jsonPath("$.items.length()").value(12))
+                .andExpect(jsonPath("$.items[1].month").value(2))
+                .andExpect(jsonPath("$.items[1].likes").value(1))
+                .andExpect(jsonPath("$.items[1].dislikes").value(1))
+                .andExpect(jsonPath("$.items[1].reservations").value(1))
+                .andExpect(jsonPath("$.items[1].revenue").value(25.0));
+            }
+
     private Korisnik buildUser(Long id, String username, Uloga role, StatusKorisnika status) {
         Korisnik user = new Korisnik();
         user.setId(id);
@@ -192,10 +253,35 @@ class AdminControllerTest {
         space.setNaziv(naziv);
         space.setGrad("Beograd");
         space.setStatus(status);
+        space.setCenaPoSatu(java.math.BigDecimal.valueOf(12.5));
         space.setFirma(firma);
         space.setKreirano(LocalDateTime.of(2026, 2, 10, 10, 0));
         space.setAzurirano(LocalDateTime.of(2026, 2, 10, 10, 0));
         return space;
+    }
+
+    private Reakcija buildReaction(Long spaceId, TipReakcije type, LocalDateTime createdAt) {
+        Prostor prostor = new Prostor();
+        prostor.setId(spaceId);
+
+        Reakcija reaction = new Reakcija();
+        reaction.setProstor(prostor);
+        reaction.setTip(type);
+        reaction.setKreirano(createdAt);
+        return reaction;
+    }
+
+    private Rezervacija buildReservation(Long spaceId, StatusRezervacije status, LocalDateTime from, LocalDateTime to) {
+        Prostor prostor = new Prostor();
+        prostor.setId(spaceId);
+        prostor.setCenaPoSatu(java.math.BigDecimal.valueOf(12.5));
+
+        Rezervacija reservation = new Rezervacija();
+        reservation.setProstor(prostor);
+        reservation.setStatus(status);
+        reservation.setDatumOd(from);
+        reservation.setDatumDo(to);
+        return reservation;
     }
 
     private AuthenticatedUser authenticatedAdmin() {

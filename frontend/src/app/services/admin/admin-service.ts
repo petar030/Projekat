@@ -2,6 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import {
   AdminRegistrationRequestsResponse,
+  AdminSpaceMonthlyStatsResponse,
+  AdminStatSpacesResponse,
   AdminSpaceRequestsResponse,
   AdminSpaceStatusResponse,
   AdminUpdateUserRequest,
@@ -65,6 +67,20 @@ export class AdminService {
 
   reject_space_request(spaceId: number, reason: string = '') {
     return this.client.patch<AdminSpaceStatusResponse>(`${this.apiUrl}/space-requests/${spaceId}/reject`, { reason }, { headers: this.auth_headers() });
+  }
+
+  stats_spaces() {
+    return this.client.get<AdminStatSpacesResponse>(`${this.apiUrl}/stats/spaces`, {
+      headers: this.auth_headers()
+    });
+  }
+
+  space_monthly_stats(spaceId: number, year: number) {
+    const params = new HttpParams().set('spaceId', String(spaceId)).set('year', String(year));
+    return this.client.get<AdminSpaceMonthlyStatsResponse>(`${this.apiUrl}/stats/space-monthly`, {
+      headers: this.auth_headers(),
+      params
+    });
   }
 
   private auth_headers(): HttpHeaders {

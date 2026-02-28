@@ -2,11 +2,16 @@ package com.coworking_hub.app.controller;
 
 import com.coworking_hub.app.model.Korisnik;
 import com.coworking_hub.app.model.Prostor;
+import com.coworking_hub.app.model.Rezervacija;
 import com.coworking_hub.app.model.enums.StatusKorisnika;
 import com.coworking_hub.app.model.enums.StatusProstora;
+import com.coworking_hub.app.model.enums.StatusRezervacije;
+import com.coworking_hub.app.model.enums.TipReakcije;
 import com.coworking_hub.app.model.enums.Uloga;
 import com.coworking_hub.app.repository.KorisnikRepository;
 import com.coworking_hub.app.repository.ProstorRepository;
+import com.coworking_hub.app.repository.ReakcijaRepository;
+import com.coworking_hub.app.repository.RezervacijaRepository;
 import com.coworking_hub.app.security.AuthenticatedUser;
 import com.coworking_hub.app.security.CurrentUser;
 import org.springframework.http.HttpStatus;
@@ -30,6 +35,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -37,10 +44,19 @@ public class AdminController {
 
     private final KorisnikRepository korisnikRepository;
     private final ProstorRepository prostorRepository;
+    private final ReakcijaRepository reakcijaRepository;
+    private final RezervacijaRepository rezervacijaRepository;
 
-    public AdminController(KorisnikRepository korisnikRepository, ProstorRepository prostorRepository) {
+    public AdminController(
+            KorisnikRepository korisnikRepository,
+            ProstorRepository prostorRepository,
+            ReakcijaRepository reakcijaRepository,
+            RezervacijaRepository rezervacijaRepository
+    ) {
         this.korisnikRepository = korisnikRepository;
         this.prostorRepository = prostorRepository;
+        this.reakcijaRepository = reakcijaRepository;
+        this.rezervacijaRepository = rezervacijaRepository;
     }
 
     @GetMapping("/users")
@@ -367,6 +383,90 @@ public class AdminController {
         return ResponseEntity.ok(new SpaceStatusResponse(space.getId(), space.getStatus().name()));
     }
 
+
+        @GetMapping("/stats/spaces")
+        @Transactional(readOnly = true)
+        public ResponseEntity<?> statsSpaces(
+            @CurrentUser AuthenticatedUser authenticatedUser
+        ) {
+            ResponseEntity<?> forbidden = ensureAdmin(authenticatedUser);
+            if (forbidden != null) {
+            return forbidden;
+            }
+
+            List<AdminStatSpaceDto> spaces = prostorRepository.findAll().stream()
+                .filter(space -> space.getStatus() == StatusProstora.odobren)
+                .sorted(Comparator.comparing(Prostor::getNaziv, Comparator.nullsLast(String::compareToIgnoreCase)))
+                .map(space -> new AdminStatSpaceDto(space.getId(), space.getNaziv()))
+                .toList();
+
+            return ResponseEntity.ok(new AdminStatSpacesResponse(spaces));
+        }
+
+        @GetMapping("/stats/space-monthly")
+        @Transactional(readOnly = true)
+        public ResponseEntity<?> spaceMonthlyStats(
+            @CurrentUser AuthenticatedUser authenticatedUser,
+            @RequestParam Long spaceId,
+            @RequestParam Integer year
+        ) {
+            ResponseEntity<?> forbidden = ensureAdmin(authenticatedUser);
+            if (forbidden != null) {
+            return forbidden;
+            }
+
+            if (spaceId == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "spaceId je obavezan"));
+            }
+
+            if (year == null || year < 2000 || year > 2100) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Neispravna godina"));
+            }
+
+            Optional<Prostor> spaceOptional = prostorRepository.findById(spaceId);
+            if (spaceOptional.isEmpty() || spaceOptional.get().getStatus() != StatusProstora.odobren) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Prostor nije pronadjen"));
+            }
+
+            Prostor space = spaceOptional.get();
+
+            List<SpaceMonthlyItemDto> items = java.util.stream.IntStream.rangeClosed(1, 12)
+                .mapToObj(month -> {
+                LocalDateTime monthStart = LocalDateTime.of(year, month, 1, 0, 0);
+                LocalDateTime monthEnd = monthStart.plusMonths(1);
+
+                long likes = reakcijaRepository.findAll().stream()
+                    .filter(reaction -> reaction.getProstor() != null && spaceId.equals(reaction.getProstor().getId()))
+                    .filter(reaction -> reaction.getKreirano() != null && !reaction.getKreirano().isBefore(monthStart) && reaction.getKreirano().isBefore(monthEnd))
+                    .filter(reaction -> reaction.getTip() == TipReakcije.svidjanje)
+                    .count();
+
+                long dislikes = reakcijaRepository.findAll().stream()
+                    .filter(reaction -> reaction.getProstor() != null && spaceId.equals(reaction.getProstor().getId()))
+                    .filter(reaction -> reaction.getKreirano() != null && !reaction.getKreirano().isBefore(monthStart) && reaction.getKreirano().isBefore(monthEnd))
+                    .filter(reaction -> reaction.getTip() == TipReakcije.nesvidjanje)
+                    .count();
+
+                long reservations = rezervacijaRepository.findAll().stream()
+                    .filter(reservation -> reservation.getProstor() != null && spaceId.equals(reservation.getProstor().getId()))
+                    .filter(reservation -> reservation.getStatus() != StatusRezervacije.otkazana)
+                    .filter(reservation -> reservation.getDatumOd() != null && !reservation.getDatumOd().isBefore(monthStart) && reservation.getDatumOd().isBefore(monthEnd))
+                    .count();
+
+                BigDecimal revenue = rezervacijaRepository.findAll().stream()
+                    .filter(reservation -> reservation.getProstor() != null && spaceId.equals(reservation.getProstor().getId()))
+                    .filter(reservation -> reservation.getStatus() == StatusRezervacije.aktivna || reservation.getStatus() == StatusRezervacije.potvrdjena)
+                    .map(reservation -> reservationRevenueInRange(reservation, monthStart, monthEnd, space.getCenaPoSatu()))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add)
+                    .setScale(2, RoundingMode.HALF_UP);
+
+                return new SpaceMonthlyItemDto(month, likes, dislikes, reservations, revenue, "RSD");
+                })
+                .toList();
+
+            return ResponseEntity.ok(new SpaceMonthlyStatsResponse(space.getId(), space.getNaziv(), year, items));
+        }
+
     private ResponseEntity<?> ensureAdmin(AuthenticatedUser authenticatedUser) {
         if (authenticatedUser == null || authenticatedUser.role() == null || !"admin".equals(authenticatedUser.role())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "Samo admin ima pristup"));
@@ -404,6 +504,23 @@ public class AdminController {
 
     private boolean contains(String value, String searchNormalized) {
         return value != null && value.toLowerCase(Locale.ROOT).contains(searchNormalized);
+    }
+
+    private BigDecimal reservationRevenueInRange(Rezervacija reservation, LocalDateTime from, LocalDateTime to, BigDecimal hourlyPrice) {
+        if (reservation.getDatumOd() == null || reservation.getDatumDo() == null || hourlyPrice == null || !reservation.getDatumDo().isAfter(reservation.getDatumOd())) {
+            return BigDecimal.ZERO;
+        }
+
+        LocalDateTime effectiveStart = reservation.getDatumOd().isAfter(from) ? reservation.getDatumOd() : from;
+        LocalDateTime effectiveEnd = reservation.getDatumDo().isBefore(to) ? reservation.getDatumDo() : to;
+
+        if (!effectiveEnd.isAfter(effectiveStart)) {
+            return BigDecimal.ZERO;
+        }
+
+        long minutes = java.time.Duration.between(effectiveStart, effectiveEnd).toMinutes();
+        BigDecimal hours = BigDecimal.valueOf(minutes).divide(BigDecimal.valueOf(60), 4, RoundingMode.HALF_UP);
+        return hourlyPrice.multiply(hours);
     }
 
     private LocalDateTime currentUtcTime() {
@@ -485,4 +602,28 @@ public class AdminController {
 
     public record RejectReasonRequest(String reason) {
     }
+
+        public record AdminStatSpacesResponse(List<AdminStatSpaceDto> spaces) {
+        }
+
+        public record AdminStatSpaceDto(Long spaceId, String spaceName) {
+        }
+
+        public record SpaceMonthlyStatsResponse(
+            Long spaceId,
+            String spaceName,
+            Integer year,
+            List<SpaceMonthlyItemDto> items
+        ) {
+        }
+
+        public record SpaceMonthlyItemDto(
+            Integer month,
+            Long likes,
+            Long dislikes,
+            Long reservations,
+            BigDecimal revenue,
+            String currency
+        ) {
+        }
 }

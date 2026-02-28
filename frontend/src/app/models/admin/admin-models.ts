@@ -54,3 +54,28 @@ export interface AdminSpaceStatusResponse {
   spaceId?: number;
   status?: string;
 }
+
+export interface AdminStatSpaceItem {
+  spaceId?: number;
+  spaceName?: string;
+}
+
+export interface AdminStatSpacesResponse {
+  spaces?: AdminStatSpaceItem[];
+}
+
+export interface AdminSpaceMonthlyItem {
+  month?: number;
+  likes?: number;
+  dislikes?: number;
+  reservations?: number;
+  revenue?: number;
+  currency?: string;
+}
+
+export interface AdminSpaceMonthlyStatsResponse {
+  spaceId?: number;
+  spaceName?: string;
+  year?: number;
+  items?: AdminSpaceMonthlyItem[];
+}

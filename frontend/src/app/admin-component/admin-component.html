@@ -127,4 +127,70 @@
 			</tr>
 		</tbody>
 	</table>
+
+	<h4>Statistika</h4>
+	<div>
+		<label for="statsSpace">Prostor:</label>
+		<select id="statsSpace" [(ngModel)]="statsSpaceId">
+			<option [ngValue]="undefined">Izaberi prostor</option>
+			<option *ngFor="let space of statsSpaces" [ngValue]="space.spaceId">{{ space.spaceName }}</option>
+		</select>
+
+		<label for="statsYear">Godina:</label>
+		<input id="statsYear" type="number" min="2000" max="2100" [(ngModel)]="statsYear" />
+		<button type="button" (click)="load_stats()">Ucitaj statistiku</button>
+	</div>
+
+	<h5>Mesečna statistika prostora: {{ statsSpaceName }} ({{ statsYear }})</h5>
+	<p *ngIf="statsLoading">Ucitavanje statistike...</p>
+	<div *ngIf="!statsLoading && statsItems.length > 0">
+		<h6>Lajkovi i dislajkovi po mesecima</h6>
+		<canvas
+			baseChart
+			[data]="reactionsChartData"
+			[options]="reactionsChartOptions"
+			[type]="reactionsChartType">
+		</canvas>
+
+		<h6>Broj rezervacija po mesecima</h6>
+		<canvas
+			baseChart
+			[data]="reservationsChartData"
+			[options]="reservationsChartOptions"
+			[type]="reservationsChartType">
+		</canvas>
+
+		<h6>Prihod po mesecima</h6>
+		<canvas
+			baseChart
+			[data]="revenueChartData"
+			[options]="revenueChartOptions"
+			[type]="revenueChartType">
+		</canvas>
+
+		<table border="1" cellspacing="0" cellpadding="6">
+			<thead>
+				<tr>
+					<th>Mesec</th>
+					<th>Like</th>
+					<th>Dislike</th>
+					<th>Rezervacije</th>
+					<th>Prihod</th>
+					<th>Valuta</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr *ngFor="let item of statsItems">
+					<td>{{ month_label(item.month) }}</td>
+					<td>{{ item.likes }}</td>
+					<td>{{ item.dislikes }}</td>
+					<td>{{ item.reservations }}</td>
+					<td>{{ item.revenue }}</td>
+					<td>{{ item.currency }}</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<p><strong>Ukupan prihod:</strong> {{ totalRevenue }} {{ statsCurrency }}</p>
+	</div>
 </div>
