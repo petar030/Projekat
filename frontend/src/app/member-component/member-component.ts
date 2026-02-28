@@ -88,12 +88,7 @@ export class MemberComponent implements OnInit {
     this.searchLoading = true;
     this.searchError = '';
 
-    this.memberService.search_spaces({
-      name: this.searchName?.trim() || undefined,
-      cities: this.selectedCities.length > 0 ? this.selectedCities : undefined,
-      type: this.selectedType,
-      officeMinDesks: this.selectedType === 'kancelarija' ? this.officeMinDesks : undefined
-    }).subscribe({
+    this.memberService.search_spaces(this.current_search_request()).subscribe({
       next: (response) => {
         this.spaces = response.content ?? [];
         this.apply_sort();
@@ -156,18 +151,47 @@ export class MemberComponent implements OnInit {
   }
 
   open_member_details(space: MemberSearchItem): void {
-    if (!space.id || !space.matchingSubspaceIds || space.matchingSubspaceIds.length === 0) {
+    if (!space.id) {
       return;
     }
 
-    const childIds = space.matchingSubspaceIds.join(',');
+    this.searchLoading = true;
+    this.searchError = '';
 
-    this.router.navigate(['/member_details', space.id], {
-      queryParams: {
-        type: this.selectedType,
-        childIds
+    this.memberService.search_spaces(this.current_search_request()).subscribe({
+      next: (response) => {
+        this.spaces = response.content ?? [];
+        this.apply_sort();
+        this.searchLoading = false;
+
+        const refreshedSpace = this.spaces.find(item => item.id === space.id);
+        if (!refreshedSpace?.matchingSubspaceIds || refreshedSpace.matchingSubspaceIds.length === 0) {
+          this.searchError = 'Nema dostupnih podprostora za izabrani tip.';
+          return;
+        }
+
+        const childIds = refreshedSpace.matchingSubspaceIds.join(',');
+        this.router.navigate(['/member_details', refreshedSpace.id], {
+          queryParams: {
+            type: this.selectedType,
+            childIds
+          }
+        });
+      },
+      error: (err) => {
+        this.searchError = err?.error?.message ?? 'Greska pri pretrazi prostora.';
+        this.searchLoading = false;
       }
     });
+  }
+
+  private current_search_request() {
+    return {
+      name: this.searchName?.trim() || undefined,
+      cities: this.selectedCities.length > 0 ? this.selectedCities : undefined,
+      type: this.selectedType,
+      officeMinDesks: this.selectedType === 'kancelarija' ? this.officeMinDesks : undefined
+    };
   }
 
   private apply_sort(): void {

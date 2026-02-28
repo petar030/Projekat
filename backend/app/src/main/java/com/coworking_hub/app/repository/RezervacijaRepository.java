@@ -19,5 +19,29 @@ public interface RezervacijaRepository extends JpaRepository<Rezervacija, Long> 
 		LocalDateTime datumDo
 	);
 
+	boolean existsByProstorIdAndStatusNotAndOtvoreniProstorIdAndDatumDoGreaterThanAndDatumOdLessThan(
+		Long prostorId,
+		StatusRezervacije status,
+		Long otvoreniProstorId,
+		LocalDateTime datumOd,
+		LocalDateTime datumDo
+	);
+
+	boolean existsByProstorIdAndStatusNotAndKancelarijaIdAndDatumDoGreaterThanAndDatumOdLessThan(
+		Long prostorId,
+		StatusRezervacije status,
+		Long kancelarijaId,
+		LocalDateTime datumOd,
+		LocalDateTime datumDo
+	);
+
+	boolean existsByProstorIdAndStatusNotAndSalaIdAndDatumDoGreaterThanAndDatumOdLessThan(
+		Long prostorId,
+		StatusRezervacije status,
+		Long salaId,
+		LocalDateTime datumOd,
+		LocalDateTime datumDo
+	);
+
 	Optional<Rezervacija> findByIdAndClanId(Long id, Long clanId);
 }

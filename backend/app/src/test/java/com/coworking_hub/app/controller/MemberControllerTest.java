@@ -2,14 +2,18 @@ package com.coworking_hub.app.controller;
 
 import com.coworking_hub.app.model.Firma;
 import com.coworking_hub.app.model.Kancelarija;
+import com.coworking_hub.app.model.Komentar;
 import com.coworking_hub.app.model.KonferencijskaSala;
+import com.coworking_hub.app.model.Korisnik;
 import com.coworking_hub.app.model.OtvoreniProstor;
 import com.coworking_hub.app.model.Prostor;
 import com.coworking_hub.app.model.Rezervacija;
 import com.coworking_hub.app.model.enums.StatusProstora;
 import com.coworking_hub.app.model.enums.StatusRezervacije;
 import com.coworking_hub.app.repository.KancelarijaRepository;
+import com.coworking_hub.app.repository.KomentarRepository;
 import com.coworking_hub.app.repository.KonferencijskaSalaRepository;
+import com.coworking_hub.app.repository.KorisnikRepository;
 import com.coworking_hub.app.repository.OtvoreniProstorRepository;
 import com.coworking_hub.app.repository.ProstorRepository;
 import com.coworking_hub.app.repository.ReakcijaRepository;
@@ -32,6 +36,7 @@ import java.util.Optional;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -61,6 +66,12 @@ class MemberControllerTest {
     @Mock
     private RezervacijaRepository rezervacijaRepository;
 
+        @Mock
+        private KorisnikRepository korisnikRepository;
+
+        @Mock
+        private KomentarRepository komentarRepository;
+
     @BeforeEach
     void setUp() {
         MemberController memberController = new MemberController(
@@ -69,7 +80,9 @@ class MemberControllerTest {
                 otvoreniProstorRepository,
                 kancelarijaRepository,
                 konferencijskaSalaRepository,
-                rezervacijaRepository
+                rezervacijaRepository,
+                korisnikRepository,
+                komentarRepository
         );
         mockMvc = MockMvcBuilders.standaloneSetup(memberController)
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver())
@@ -194,6 +207,380 @@ class MemberControllerTest {
                         .requestAttr(JwtAuthInterceptor.AUTH_USER_ATTR, authenticatedUser(12L)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Prosledjen je resourceId koji ne pripada trazenom prostoru/tipu"));
+    }
+
+    @Test
+    void availabilityOpenSpaceShouldReturnOnlyFullyBookedIntervals() throws Exception {
+        when(otvoreniProstorRepository.findByProstorIdIn(List.of(10L))).thenReturn(List.of(
+                buildOpenSpace(3001L, 10L, 2)
+        ));
+
+        Rezervacija first = buildReservation(811L, 10L, "Hub Dorcol", "Beograd",
+                LocalDateTime.of(2026, 2, 23, 9, 0),
+                LocalDateTime.of(2026, 2, 23, 11, 0),
+                StatusRezervacije.aktivna);
+        first.setOtvoreniProstor(buildOpenSpace(3001L, 10L, 2));
+
+        Rezervacija second = buildReservation(812L, 10L, "Hub Dorcol", "Beograd",
+                LocalDateTime.of(2026, 2, 23, 10, 0),
+                LocalDateTime.of(2026, 2, 23, 12, 0),
+                StatusRezervacije.potvrdjena);
+        second.setOtvoreniProstor(buildOpenSpace(3001L, 10L, 2));
+
+        when(rezervacijaRepository.findByProstorIdAndStatusNotAndDatumDoGreaterThanAndDatumOdLessThan(
+                10L,
+                StatusRezervacije.otkazana,
+                LocalDateTime.of(2026, 2, 23, 0, 0),
+                LocalDateTime.of(2026, 3, 2, 0, 0)
+        )).thenReturn(List.of(first, second));
+
+        mockMvc.perform(post("/api/member/spaces/10/availability")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "type": "otvoreni",
+                                  "resourceIds": [3001],
+                                  "weekStart": "2026-02-23"
+                                }
+                                """)
+                        .requestAttr(JwtAuthInterceptor.AUTH_USER_ATTR, authenticatedUser(12L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resources[0].resourceId").value(3001))
+                .andExpect(jsonPath("$.resources[0].busySlots.length()").value(1))
+                .andExpect(jsonPath("$.resources[0].busySlots[0].from").value("2026-02-23T10:00:00"))
+                .andExpect(jsonPath("$.resources[0].busySlots[0].to").value("2026-02-23T11:00:00"));
+    }
+
+    @Test
+    void availabilityOpenSpaceShouldReturnMultipleQuarterHourFullyBookedIntervals() throws Exception {
+        when(otvoreniProstorRepository.findByProstorIdIn(List.of(10L))).thenReturn(List.of(
+                buildOpenSpace(3001L, 10L, 2)
+        ));
+
+        Rezervacija first = buildReservation(821L, 10L, "Hub Dorcol", "Beograd",
+                LocalDateTime.of(2026, 2, 23, 9, 0),
+                LocalDateTime.of(2026, 2, 23, 10, 15),
+                StatusRezervacije.aktivna);
+        first.setOtvoreniProstor(buildOpenSpace(3001L, 10L, 2));
+
+        Rezervacija second = buildReservation(822L, 10L, "Hub Dorcol", "Beograd",
+                LocalDateTime.of(2026, 2, 23, 9, 30),
+                LocalDateTime.of(2026, 2, 23, 9, 45),
+                StatusRezervacije.potvrdjena);
+        second.setOtvoreniProstor(buildOpenSpace(3001L, 10L, 2));
+
+        Rezervacija third = buildReservation(823L, 10L, "Hub Dorcol", "Beograd",
+                LocalDateTime.of(2026, 2, 23, 10, 0),
+                LocalDateTime.of(2026, 2, 23, 11, 0),
+                StatusRezervacije.aktivna);
+        third.setOtvoreniProstor(buildOpenSpace(3001L, 10L, 2));
+
+        when(rezervacijaRepository.findByProstorIdAndStatusNotAndDatumDoGreaterThanAndDatumOdLessThan(
+                10L,
+                StatusRezervacije.otkazana,
+                LocalDateTime.of(2026, 2, 23, 0, 0),
+                LocalDateTime.of(2026, 3, 2, 0, 0)
+        )).thenReturn(List.of(first, second, third));
+
+        mockMvc.perform(post("/api/member/spaces/10/availability")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "type": "otvoreni",
+                                  "resourceIds": [3001],
+                                  "weekStart": "2026-02-23"
+                                }
+                                """)
+                        .requestAttr(JwtAuthInterceptor.AUTH_USER_ATTR, authenticatedUser(12L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resources[0].busySlots.length()").value(2))
+                .andExpect(jsonPath("$.resources[0].busySlots[0].from").value("2026-02-23T09:30:00"))
+                .andExpect(jsonPath("$.resources[0].busySlots[0].to").value("2026-02-23T09:45:00"))
+                .andExpect(jsonPath("$.resources[0].busySlots[1].from").value("2026-02-23T10:00:00"))
+                .andExpect(jsonPath("$.resources[0].busySlots[1].to").value("2026-02-23T10:15:00"));
+    }
+
+    @Test
+    void createReservationShouldReturnCreated() throws Exception {
+        Prostor space = buildSpace(10L, "Hub Dorcol", "Beograd", "Coworking Plus");
+        when(prostorRepository.findByIdAndStatus(10L, StatusProstora.odobren)).thenReturn(Optional.of(space));
+        when(kancelarijaRepository.findByProstorIdIn(List.of(10L))).thenReturn(List.of(
+                buildOffice(1001L, 10L, 6)
+        ));
+
+        Korisnik member = new Korisnik();
+        member.setId(12L);
+        member.setKorisnickoIme("marko");
+        when(korisnikRepository.findById(12L)).thenReturn(Optional.of(member));
+
+        when(rezervacijaRepository.existsByProstorIdAndStatusNotAndKancelarijaIdAndDatumDoGreaterThanAndDatumOdLessThan(
+                10L,
+                StatusRezervacije.otkazana,
+                1001L,
+                LocalDateTime.of(2026, 3, 20, 10, 0),
+                LocalDateTime.of(2026, 3, 20, 12, 0)
+        )).thenReturn(false);
+
+        Rezervacija saved = new Rezervacija();
+        saved.setId(900L);
+        saved.setStatus(StatusRezervacije.aktivna);
+        when(rezervacijaRepository.save(org.mockito.ArgumentMatchers.any(Rezervacija.class))).thenReturn(saved);
+
+        mockMvc.perform(post("/api/member/reservations")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "spaceId": 10,
+                                  "type": "kancelarija",
+                                  "resourceId": 1001,
+                                  "from": "2026-03-20T10:00:00",
+                                  "to": "2026-03-20T12:00:00"
+                                }
+                                """)
+                        .requestAttr(JwtAuthInterceptor.AUTH_USER_ATTR, authenticatedUser(12L)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(900))
+                .andExpect(jsonPath("$.status").value("aktivna"));
+    }
+
+    @Test
+    void createReservationShouldReturnConflictOnOverlap() throws Exception {
+        Prostor space = buildSpace(10L, "Hub Dorcol", "Beograd", "Coworking Plus");
+        when(prostorRepository.findByIdAndStatus(10L, StatusProstora.odobren)).thenReturn(Optional.of(space));
+        when(kancelarijaRepository.findByProstorIdIn(List.of(10L))).thenReturn(List.of(
+                buildOffice(1001L, 10L, 6)
+        ));
+
+        when(rezervacijaRepository.existsByProstorIdAndStatusNotAndKancelarijaIdAndDatumDoGreaterThanAndDatumOdLessThan(
+                10L,
+                StatusRezervacije.otkazana,
+                1001L,
+                LocalDateTime.of(2026, 3, 20, 10, 0),
+                LocalDateTime.of(2026, 3, 20, 12, 0)
+        )).thenReturn(true);
+
+        mockMvc.perform(post("/api/member/reservations")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "spaceId": 10,
+                                  "type": "kancelarija",
+                                  "resourceId": 1001,
+                                  "from": "2026-03-20T10:00:00",
+                                  "to": "2026-03-20T12:00:00"
+                                }
+                                """)
+                        .requestAttr(JwtAuthInterceptor.AUTH_USER_ATTR, authenticatedUser(12L)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Termin je vec zauzet za izabrani resurs"));
+    }
+
+    @Test
+    void createReservationShouldReturnSpecificConstraintMessageWhenInsertFails() throws Exception {
+        Prostor space = buildSpace(10L, "Hub Dorcol", "Beograd", "Coworking Plus");
+        when(prostorRepository.findByIdAndStatus(10L, StatusProstora.odobren)).thenReturn(Optional.of(space));
+        when(kancelarijaRepository.findByProstorIdIn(List.of(10L))).thenReturn(List.of(
+                buildOffice(1001L, 10L, 6)
+        ));
+
+        Korisnik member = new Korisnik();
+        member.setId(12L);
+        member.setKorisnickoIme("marko");
+        when(korisnikRepository.findById(12L)).thenReturn(Optional.of(member));
+
+        when(rezervacijaRepository.existsByProstorIdAndStatusNotAndKancelarijaIdAndDatumDoGreaterThanAndDatumOdLessThan(
+                10L,
+                StatusRezervacije.otkazana,
+                1001L,
+                LocalDateTime.of(2026, 3, 20, 10, 0),
+                LocalDateTime.of(2026, 3, 20, 12, 0)
+        )).thenReturn(false);
+
+        doThrow(new org.springframework.dao.DataIntegrityViolationException(
+                "insert failed",
+                new RuntimeException("Clan je banovan iz ovog prostora zbog prekoracenja broja kaznenih prekrsaja.")
+        )).when(rezervacijaRepository).save(org.mockito.ArgumentMatchers.any(Rezervacija.class));
+
+        mockMvc.perform(post("/api/member/reservations")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "spaceId": 10,
+                                  "type": "kancelarija",
+                                  "resourceId": 1001,
+                                  "from": "2026-03-20T10:00:00",
+                                  "to": "2026-03-20T12:00:00"
+                                }
+                                """)
+                        .requestAttr(JwtAuthInterceptor.AUTH_USER_ATTR, authenticatedUser(12L)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value("Clan je banovan iz ovog prostora zbog prekoracenja broja kaznenih prekrsaja."));
+    }
+
+    @Test
+    void createReservationOpenSpaceShouldAllowOverlapWhenDesksAvailable() throws Exception {
+        Prostor space = buildSpace(10L, "Hub Dorcol", "Beograd", "Coworking Plus");
+        when(prostorRepository.findByIdAndStatus(10L, StatusProstora.odobren)).thenReturn(Optional.of(space));
+        when(otvoreniProstorRepository.findByProstorIdIn(List.of(10L))).thenReturn(List.of(
+                buildOpenSpace(3001L, 10L, 2)
+        ));
+
+        Korisnik member = new Korisnik();
+        member.setId(12L);
+        member.setKorisnickoIme("marko");
+        when(korisnikRepository.findById(12L)).thenReturn(Optional.of(member));
+
+        Rezervacija existing = buildReservation(850L, 10L, "Hub Dorcol", "Beograd",
+                LocalDateTime.of(2026, 3, 20, 10, 0),
+                LocalDateTime.of(2026, 3, 20, 12, 0),
+                StatusRezervacije.aktivna);
+        existing.setOtvoreniProstor(buildOpenSpace(3001L, 10L, 2));
+
+        when(rezervacijaRepository.findByProstorIdAndStatusNotAndDatumDoGreaterThanAndDatumOdLessThan(
+                10L,
+                StatusRezervacije.otkazana,
+                LocalDateTime.of(2026, 3, 20, 10, 0),
+                LocalDateTime.of(2026, 3, 20, 12, 0)
+        )).thenReturn(List.of(existing));
+
+        Rezervacija saved = new Rezervacija();
+        saved.setId(901L);
+        saved.setStatus(StatusRezervacije.aktivna);
+        when(rezervacijaRepository.save(org.mockito.ArgumentMatchers.any(Rezervacija.class))).thenReturn(saved);
+
+        mockMvc.perform(post("/api/member/reservations")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "spaceId": 10,
+                                  "type": "otvoreni",
+                                  "resourceId": 3001,
+                                  "from": "2026-03-20T10:00:00",
+                                  "to": "2026-03-20T12:00:00"
+                                }
+                                """)
+                        .requestAttr(JwtAuthInterceptor.AUTH_USER_ATTR, authenticatedUser(12L)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(901));
+    }
+
+    @Test
+    void createReservationOpenSpaceShouldReturnConflictWhenAnySubIntervalIsFullyBooked() throws Exception {
+        Prostor space = buildSpace(10L, "Hub Dorcol", "Beograd", "Coworking Plus");
+        when(prostorRepository.findByIdAndStatus(10L, StatusProstora.odobren)).thenReturn(Optional.of(space));
+        when(otvoreniProstorRepository.findByProstorIdIn(List.of(10L))).thenReturn(List.of(
+                buildOpenSpace(3001L, 10L, 2)
+        ));
+
+        Rezervacija first = buildReservation(860L, 10L, "Hub Dorcol", "Beograd",
+                LocalDateTime.of(2026, 3, 20, 10, 0),
+                LocalDateTime.of(2026, 3, 20, 11, 0),
+                StatusRezervacije.aktivna);
+        first.setOtvoreniProstor(buildOpenSpace(3001L, 10L, 2));
+
+        Rezervacija second = buildReservation(861L, 10L, "Hub Dorcol", "Beograd",
+                LocalDateTime.of(2026, 3, 20, 10, 15),
+                LocalDateTime.of(2026, 3, 20, 10, 45),
+                StatusRezervacije.potvrdjena);
+        second.setOtvoreniProstor(buildOpenSpace(3001L, 10L, 2));
+
+        when(rezervacijaRepository.findByProstorIdAndStatusNotAndDatumDoGreaterThanAndDatumOdLessThan(
+                10L,
+                StatusRezervacije.otkazana,
+                LocalDateTime.of(2026, 3, 20, 10, 30),
+                LocalDateTime.of(2026, 3, 20, 11, 30)
+        )).thenReturn(List.of(first, second));
+
+        mockMvc.perform(post("/api/member/reservations")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "spaceId": 10,
+                                  "type": "otvoreni",
+                                  "resourceId": 3001,
+                                  "from": "2026-03-20T10:30:00",
+                                  "to": "2026-03-20T11:30:00"
+                                }
+                                """)
+                        .requestAttr(JwtAuthInterceptor.AUTH_USER_ATTR, authenticatedUser(12L)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Termin je vec zauzet za izabrani resurs"));
+    }
+
+    @Test
+    void createReservationOpenSpaceShouldAllowWhenTouchingBoundaryWithoutOverlap() throws Exception {
+        Prostor space = buildSpace(10L, "Hub Dorcol", "Beograd", "Coworking Plus");
+        when(prostorRepository.findByIdAndStatus(10L, StatusProstora.odobren)).thenReturn(Optional.of(space));
+        when(otvoreniProstorRepository.findByProstorIdIn(List.of(10L))).thenReturn(List.of(
+                buildOpenSpace(3001L, 10L, 1)
+        ));
+
+        Korisnik member = new Korisnik();
+        member.setId(12L);
+        member.setKorisnickoIme("marko");
+        when(korisnikRepository.findById(12L)).thenReturn(Optional.of(member));
+
+        when(rezervacijaRepository.findByProstorIdAndStatusNotAndDatumDoGreaterThanAndDatumOdLessThan(
+                10L,
+                StatusRezervacije.otkazana,
+                LocalDateTime.of(2026, 3, 20, 11, 0),
+                LocalDateTime.of(2026, 3, 20, 12, 0)
+        )).thenReturn(List.of());
+
+        Rezervacija saved = new Rezervacija();
+        saved.setId(902L);
+        saved.setStatus(StatusRezervacije.aktivna);
+        when(rezervacijaRepository.save(org.mockito.ArgumentMatchers.any(Rezervacija.class))).thenReturn(saved);
+
+        mockMvc.perform(post("/api/member/reservations")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "spaceId": 10,
+                                  "type": "otvoreni",
+                                  "resourceId": 3001,
+                                  "from": "2026-03-20T11:00:00",
+                                  "to": "2026-03-20T12:00:00"
+                                }
+                                """)
+                        .requestAttr(JwtAuthInterceptor.AUTH_USER_ATTR, authenticatedUser(12L)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(902));
+    }
+
+    @Test
+    void latestCommentsShouldReturnMineFlags() throws Exception {
+        when(prostorRepository.findByIdAndStatus(10L, StatusProstora.odobren))
+                .thenReturn(Optional.of(buildSpace(10L, "Hub Dorcol", "Beograd", "Coworking Plus")));
+
+        Komentar mine = new Komentar();
+        mine.setId(1L);
+        mine.setSadrzaj("Moj komentar");
+        mine.setKreirano(LocalDateTime.of(2026, 3, 21, 10, 0));
+        Korisnik me = new Korisnik();
+        me.setId(12L);
+        me.setKorisnickoIme("marko");
+        mine.setClan(me);
+
+        Komentar others = new Komentar();
+        others.setId(2L);
+        others.setSadrzaj("Tudji komentar");
+        others.setKreirano(LocalDateTime.of(2026, 3, 21, 9, 0));
+        Korisnik another = new Korisnik();
+        another.setId(99L);
+        another.setKorisnickoIme("ana");
+        others.setClan(another);
+
+        when(komentarRepository.findByProstorIdOrderByKreiranoDesc(org.mockito.ArgumentMatchers.eq(10L), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(List.of(mine, others));
+
+        mockMvc.perform(get("/api/member/spaces/10/comments/latest")
+                        .param("limit", "10")
+                        .requestAttr(JwtAuthInterceptor.AUTH_USER_ATTR, authenticatedUser(12L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.comments.length()").value(2))
+                .andExpect(jsonPath("$.comments[0].mine").value(true))
+                .andExpect(jsonPath("$.comments[1].mine").value(false));
     }
 
     @Test

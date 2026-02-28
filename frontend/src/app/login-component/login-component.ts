@@ -24,6 +24,12 @@ export class LoginComponent {
     this.authService.login(this.username, this.password).subscribe({
       next: (response: any) => {
         localStorage.setItem('userToken', response.accessToken);
+        if (response?.user?.username) {
+          localStorage.setItem('userUsername', response.user.username);
+        }
+        if (response?.user?.id !== undefined && response?.user?.id !== null) {
+          localStorage.setItem('userId', String(response.user.id));
+        }
         if(response.user.role === 'clan'){
           this.router.navigate(['/member']);
         } else if(response.user.role === 'menadzer'){

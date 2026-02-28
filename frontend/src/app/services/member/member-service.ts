@@ -1,7 +1,16 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import {
+  MemberAvailabilityRequest,
+  MemberAvailabilityResponse,
   MemberCancelReservationResponse,
+  MemberCreateCommentRequest,
+  MemberCreateCommentResponse,
+  MemberCreateReactionRequest,
+  MemberCreateReactionResponse,
+  MemberCreateReservationRequest,
+  MemberCreateReservationResponse,
+  MemberLatestCommentsResponse,
   MemberReservationsResponse,
   MemberSearchRequest,
   MemberSearchResponse
@@ -53,6 +62,49 @@ export class MemberService {
       `${this.apiUrl}/reservations/${reservationId}/cancel`,
       {},
       { headers: this.auth_headers() }
+    );
+  }
+
+  availability(spaceId: number, request: MemberAvailabilityRequest) {
+    return this.client.post<MemberAvailabilityResponse>(
+      `${this.apiUrl}/spaces/${spaceId}/availability`,
+      request,
+      { headers: this.auth_headers() }
+    );
+  }
+
+  create_reservation(request: MemberCreateReservationRequest) {
+    return this.client.post<MemberCreateReservationResponse>(
+      `${this.apiUrl}/reservations`,
+      request,
+      { headers: this.auth_headers() }
+    );
+  }
+
+  create_reaction(spaceId: number, request: MemberCreateReactionRequest) {
+    return this.client.post<MemberCreateReactionResponse>(
+      `${this.apiUrl}/spaces/${spaceId}/reactions`,
+      request,
+      { headers: this.auth_headers() }
+    );
+  }
+
+  create_comment(spaceId: number, request: MemberCreateCommentRequest) {
+    return this.client.post<MemberCreateCommentResponse>(
+      `${this.apiUrl}/spaces/${spaceId}/comments`,
+      request,
+      { headers: this.auth_headers() }
+    );
+  }
+
+  latest_comments(spaceId: number, limit: number = 10) {
+    const params = new HttpParams().set('limit', limit);
+    return this.client.get<MemberLatestCommentsResponse>(
+      `${this.apiUrl}/spaces/${spaceId}/comments/latest`,
+      {
+        headers: this.auth_headers(),
+        params
+      }
     );
   }
 

@@ -750,6 +750,9 @@ VALUES
 -- POCETNI PODACI: otvoreni prostori, potvrdjene rezervacije i reakcije
 -- =============================================================================
 
+SET @OLD_TIME_ZONE = @@session.time_zone;
+SET time_zone = '+00:00';
+
 INSERT INTO otvoreni_prostori (prostor_id, broj_stolova)
 VALUES
     ((SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1), 20),
@@ -930,6 +933,248 @@ VALUES
         'aktivna'
     ),
     (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'ana'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 10:00:00',
+        '2026-02-24 12:00:00',
+        'aktivna'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'marko'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 10:30:00',
+        '2026-02-24 11:30:00',
+        'potvrdjena'
+    ),
+    -- Open space full-capacity test seed (Hub Dorcol ima 20 stolova):
+    -- 20 istovremenih rezervacija => termin mora biti prikazan kao zauzet.
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'ana'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 14:00:00',
+        '2026-02-24 14:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'marko'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 14:00:00',
+        '2026-02-24 14:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'maja'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 14:00:00',
+        '2026-02-24 14:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'petar'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 14:00:00',
+        '2026-02-24 14:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'ana'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 14:00:00',
+        '2026-02-24 14:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'marko'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 14:00:00',
+        '2026-02-24 14:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'maja'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 14:00:00',
+        '2026-02-24 14:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'petar'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 14:00:00',
+        '2026-02-24 14:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'ana'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 14:00:00',
+        '2026-02-24 14:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'marko'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 14:00:00',
+        '2026-02-24 14:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'maja'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 14:00:00',
+        '2026-02-24 14:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'petar'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 14:00:00',
+        '2026-02-24 14:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'ana'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 14:00:00',
+        '2026-02-24 14:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'marko'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 14:00:00',
+        '2026-02-24 14:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'maja'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 14:00:00',
+        '2026-02-24 14:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'petar'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 14:00:00',
+        '2026-02-24 14:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'ana'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 14:00:00',
+        '2026-02-24 14:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'marko'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 14:00:00',
+        '2026-02-24 14:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'maja'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 14:00:00',
+        '2026-02-24 14:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'petar'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        (SELECT id FROM otvoreni_prostori WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) LIMIT 1),
+        NULL,
+        NULL,
+        '2026-02-24 14:00:00',
+        '2026-02-24 14:30:00',
+        'potvrdjena'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'ana'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        NULL,
+        (SELECT id FROM kancelarije WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) AND naziv = 'Office B' LIMIT 1),
+        NULL,
+        '2026-02-25 09:00:00',
+        '2026-02-25 11:00:00',
+        'aktivna'
+    ),
+    (
+        (SELECT id FROM korisnici WHERE korisnicko_ime = 'petar'),
+        (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
+        NULL,
+        NULL,
+        (SELECT id FROM konferencijske_sale WHERE prostor_id = (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1) AND naziv = 'Sala Alfa' LIMIT 1),
+        '2026-02-26 13:00:00',
+        '2026-02-26 14:30:00',
+        'aktivna'
+    ),
+    (
         (SELECT id FROM korisnici WHERE korisnicko_ime = 'maja'),
         (SELECT id FROM prostori WHERE naziv = 'Hub Dorcol' LIMIT 1),
         NULL,
@@ -1014,3 +1259,5 @@ VALUES
         (SELECT id FROM prostori WHERE naziv = 'Nis Coworking Center' LIMIT 1),
      'Otvoreni deo je dobar za kratke rezervacije.',
      '2026-03-05 10:10:00');
+
+SET time_zone = @OLD_TIME_ZONE;

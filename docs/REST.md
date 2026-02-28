@@ -506,6 +506,7 @@ Request:
 - `type` = `otvoreni|kancelarija|sala`
 - `resourceIds` = lista ID-jeva podprostora za izabrani tip (najcesce iz `matchingSubspaceIds` iz pretrage)
 - `weekStart` (`YYYY-MM-DD`)
+- Svaki element u `resources` vraca i `resourceName`
 
 Response `200`:
 
@@ -566,6 +567,8 @@ Response `201`:
 ```
 
 Greske: `409` (preklapanje), `403` (ban), `400` (los interval).
+
+Napomena: rezervacija se kreira u okviru jednog dana (`from` i `to` moraju biti isti datum).
 
 ## 6.4 Sve rezervacije trenutnog clana
 

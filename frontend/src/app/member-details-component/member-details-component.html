@@ -46,8 +46,10 @@
 		</ng-template>
 
 		<h3>Poslednjih 10 komentara</h3>
-		<div *ngIf="details.latestComments && details.latestComments.length > 0; else noComments">
-			<div *ngFor="let comment of details.latestComments">
+		<div *ngIf="commentsLoading">Ucitavanje komentara...</div>
+		<p *ngIf="commentsError">{{ commentsError }}</p>
+		<div *ngIf="!commentsLoading && comments.length > 0; else noComments">
+			<div *ngFor="let comment of comments" [class.mine-comment]="comment.mine">
 				<p>
 					<strong>{{ comment.username }}</strong>
 					({{ comment.createdAt | date:'dd.MM.yyyy HH:mm' }})
@@ -62,6 +64,73 @@
 		<div>
 			<p><strong>Tip za rezervaciju:</strong> {{ selectedType }}</p>
 			<p><strong>ID-jevi podprostora:</strong> {{ matchingSubspaceIds.join(', ') || '-' }}</p>
+		</div>
+
+		<h3>Kalendar zauzetosti</h3>
+		<p><strong>Pocetak sedmice:</strong> {{ weekStart }}</p>
+
+		<p *ngIf="availabilityLoading">Ucitavanje zauzetosti...</p>
+		<p *ngIf="availabilityError">{{ availabilityError }}</p>
+
+		<div *ngIf="!availabilityLoading && availabilityResources.length > 0">
+			<div *ngIf="availabilityResources.length > 1">
+				<button type="button" (click)="previousResource()">←</button>
+				<span>
+					{{ currentResource()?.resourceName }}
+					({{ currentResourceIndex + 1 }}/{{ availabilityResources.length }})
+				</span>
+				<button type="button" (click)="nextResource()">→</button>
+			</div>
+
+			<div *ngIf="availabilityResources.length === 1">
+				<p><strong>Resurs:</strong> {{ currentResource()?.resourceName }}</p>
+			</div>
+
+			<div>
+				<full-calendar [options]="calendarOptions"></full-calendar>
+			</div>
+
+			<h3>Rezervacija</h3>
+			<div>
+				<label for="reservationDate">Datum:</label>
+				<input
+					id="reservationDate"
+					type="date"
+					[(ngModel)]="selectedDate"
+					name="selectedDate"
+					[min]="reservationDateMin()"
+					[max]="reservationDateMax()"
+				/>
+			</div>
+			<div>
+				<label for="fromTime">Od:</label>
+				<input id="fromTime" type="time" [(ngModel)]="fromTime" name="fromTime" />
+			</div>
+			<div>
+				<label for="toTime">Do:</label>
+				<input id="toTime" type="time" [(ngModel)]="toTime" name="toTime" />
+			</div>
+			<button type="button" (click)="reserve()">Rezervisi</button>
+			<p *ngIf="reservationMessage">{{ reservationMessage }}</p>
+			<p *ngIf="reservationError">{{ reservationError }}</p>
+		</div>
+
+		<h3>Reakcije i komentar</h3>
+		<div>
+			<p><strong>Lajkovi:</strong> {{ details.reactions?.likes }}</p>
+			<p><strong>Dislajkovi:</strong> {{ details.reactions?.dislikes }}</p>
+			<button type="button" (click)="react('svidjanje')">Svidjanje</button>
+			<button type="button" (click)="react('nesvidjanje')">Nesvidjanje</button>
+			<p *ngIf="reactionMessage">{{ reactionMessage }}</p>
+			<p *ngIf="reactionError">{{ reactionError }}</p>
+		</div>
+
+		<div>
+			<label for="commentText">Komentar:</label>
+			<textarea id="commentText" [(ngModel)]="commentText" name="commentText" rows="3"></textarea>
+			<button type="button" (click)="sendComment()">Posalji komentar</button>
+			<p *ngIf="commentMessage">{{ commentMessage }}</p>
+			<p *ngIf="commentError">{{ commentError }}</p>
 		</div>
 	</div>
 </div>
