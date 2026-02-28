@@ -1,0 +1,38 @@
+<div>
+	<h3>Dodavanje podprostora</h3>
+
+	<p><strong>Prostor ID:</strong> {{ spaceId }}</p>
+	<p *ngIf="errorMessage">{{ errorMessage }}</p>
+	<p *ngIf="successMessage">{{ successMessage }}</p>
+
+	<div>
+		<button type="button" (click)="selectType('kancelarija')">Dodaj kancelariju</button>
+		<button type="button" (click)="selectType('sala')">Dodaj salu</button>
+	</div>
+
+	<form (ngSubmit)="submit()" *ngIf="selectedType === 'kancelarija'">
+		<div>
+			<label for="officeNaziv">Naziv kancelarije:</label>
+			<input id="officeNaziv" type="text" [(ngModel)]="officeNaziv" name="officeNaziv" />
+		</div>
+		<div>
+			<label for="officeBrojStolova">Broj stolova:</label>
+			<input id="officeBrojStolova" type="number" min="1" [(ngModel)]="officeBrojStolova" name="officeBrojStolova" />
+		</div>
+		<button type="submit">Sacuvaj kancelariju</button>
+	</form>
+
+	<form (ngSubmit)="submit()" *ngIf="selectedType === 'sala'">
+		<div>
+			<label for="roomNaziv">Naziv sale:</label>
+			<input id="roomNaziv" type="text" [(ngModel)]="roomNaziv" name="roomNaziv" />
+		</div>
+		<div>
+			<label for="roomDodatnaOprema">Dodatna oprema:</label>
+			<textarea id="roomDodatnaOprema" rows="3" [(ngModel)]="roomDodatnaOprema" name="roomDodatnaOprema"></textarea>
+		</div>
+		<button type="submit">Sacuvaj salu</button>
+	</form>
+
+	<button type="button" (click)="goBack()">Nazad na manager pregled</button>
+</div>

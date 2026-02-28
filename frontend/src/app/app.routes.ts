@@ -8,7 +8,9 @@ import { StartComponent } from './start-component/start-component';
 import { PublicDetailsComponent } from './public-details-component/public-details-component';
 import { MemberComponent } from './member-component/member-component';
 import { MemberDetailsComponent } from './member-details-component/member-details-component';
+import { ManagerAddComponent } from './manager-add-component/manager-add-component';
 import { ManagerComponent } from './manager-component/manager-component';
+import { ManagerUpdateComponent } from './manager-update-component/manager-update-component';
 import { AdminComponent } from './admin-component/admin-component';
 
 export const routes: Routes = [
@@ -22,5 +24,7 @@ export const routes: Routes = [
     {path: 'member', component: MemberComponent},
     {path: 'member_details/:id', component: MemberDetailsComponent},
     {path: 'manager', component: ManagerComponent},
+    {path: 'manager_add', component: ManagerAddComponent},
+    {path: 'manager_update/:id', component: ManagerUpdateComponent},
     {path: 'admin', component: AdminComponent}
 ];

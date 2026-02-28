@@ -210,6 +210,36 @@ class MemberControllerTest {
     }
 
     @Test
+    void availabilityShouldReturnAdditionalEquipmentForMeetingRooms() throws Exception {
+        when(konferencijskaSalaRepository.findByProstorIdIn(List.of(10L))).thenReturn(List.of(
+                buildMeetingRoom(2001L, 10L, "Sala Alfa", "TV i whiteboard")
+        ));
+
+        when(rezervacijaRepository.findByProstorIdAndStatusNotAndDatumDoGreaterThanAndDatumOdLessThan(
+                10L,
+                StatusRezervacije.otkazana,
+                LocalDateTime.of(2026, 2, 23, 0, 0),
+                LocalDateTime.of(2026, 3, 2, 0, 0)
+        )).thenReturn(List.of());
+
+        mockMvc.perform(post("/api/member/spaces/10/availability")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "type": "sala",
+                                  "resourceIds": [2001],
+                                  "weekStart": "2026-02-23"
+                                }
+                                """)
+                        .requestAttr(JwtAuthInterceptor.AUTH_USER_ATTR, authenticatedUser(12L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resources[0].resourceId").value(2001))
+                .andExpect(jsonPath("$.resources[0].resourceName").value("Sala Alfa"))
+                .andExpect(jsonPath("$.resources[0].additionalEquipment").value("TV i whiteboard"))
+                .andExpect(jsonPath("$.resources[0].busySlots.length()").value(0));
+    }
+
+    @Test
     void availabilityOpenSpaceShouldReturnOnlyFullyBookedIntervals() throws Exception {
         when(otvoreniProstorRepository.findByProstorIdIn(List.of(10L))).thenReturn(List.of(
                 buildOpenSpace(3001L, 10L, 2)
@@ -729,13 +759,19 @@ class MemberControllerTest {
         }
 
         private KonferencijskaSala buildMeetingRoom(Long roomId, Long spaceId) {
+                return buildMeetingRoom(roomId, spaceId, "Sala " + roomId, null);
+        }
+
+        private KonferencijskaSala buildMeetingRoom(Long roomId, Long spaceId, String name, String additionalEquipment) {
                 Prostor prostor = new Prostor();
                 prostor.setId(spaceId);
 
                 KonferencijskaSala room = new KonferencijskaSala();
                 room.setId(roomId);
                 room.setProstor(prostor);
+                room.setNaziv(name);
                 room.setBrojMesta(10);
+                room.setDodatnaOprema(additionalEquipment);
                 return room;
         }
 

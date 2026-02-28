@@ -1,0 +1,11 @@
+.space-map {
+	height: 320px;
+	max-width: 900px;
+	width: 100%;
+	border: 1px solid #ccc;
+	margin-top: 8px;
+}
+
+.coordinates {
+	margin-top: 8px;
+}

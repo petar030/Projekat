@@ -185,6 +185,23 @@ export class MemberComponent implements OnInit {
     });
   }
 
+  format_datetime_local(value?: string): string {
+    const parsed = this.parse_backend_utc(value);
+    if (!parsed) {
+      return '';
+    }
+
+    return parsed.toLocaleString('sr-RS', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+  }
+
   private current_search_request() {
     return {
       name: this.searchName?.trim() || undefined,
@@ -203,6 +220,18 @@ export class MemberComponent implements OnInit {
       const compare = aValue.localeCompare(bValue, 'sr', { sensitivity: 'base' });
       return isAsc ? compare : -compare;
     });
+  }
+
+  private parse_backend_utc(value?: string): Date | null {
+    if (!value) {
+      return null;
+    }
+
+    const normalized = value.replace(' ', 'T');
+    const hasOffset = /[zZ]|[+-]\d{2}:\d{2}$/.test(normalized);
+    const candidate = hasOffset ? normalized : `${normalized}Z`;
+    const parsed = new Date(candidate);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
 
 }

@@ -33,6 +33,7 @@ export class LoginComponent {
         if(response.user.role === 'clan'){
           this.router.navigate(['/member']);
         } else if(response.user.role === 'menadzer'){
+          //console.log("Prijavljen menadzer, id: " + response.user.id);
           this.router.navigate(['/manager']);
         }
         console.log(JSON.stringify(response, null, 2));

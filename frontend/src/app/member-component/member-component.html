@@ -28,8 +28,8 @@
 					<td>{{ reservation.id }}</td>
 					<td>{{ reservation.spaceName }}</td>
 					<td>{{ reservation.city }}</td>
-					<td>{{ reservation.from }}</td>
-					<td>{{ reservation.to }}</td>
+					<td>{{ format_datetime_local(reservation.from) }}</td>
+					<td>{{ format_datetime_local(reservation.to) }}</td>
 					<td>{{ reservation.status }}</td>
 					<td>
 						<button *ngIf="reservation.cancellable" type="button" (click)="cancel_reservation(reservation)">

@@ -15,7 +15,7 @@ export const authExpiredInterceptor: HttpInterceptorFn = (req, next) => {
         localStorage.removeItem('userToken');
         localStorage.removeItem('userUsername');
         localStorage.removeItem('userId');
-        router.navigate(['/']);
+        //router.navigate(['/']);
       }
 
       return throwError(() => error);

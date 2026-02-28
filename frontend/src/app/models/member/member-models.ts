@@ -58,6 +58,7 @@ export class MemberBusySlot {
 export class MemberAvailabilityResource {
   resourceId?: number;
   resourceName?: string;
+  additionalEquipment?: string;
   busySlots?: MemberBusySlot[];
 }
 

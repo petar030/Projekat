@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.Optional;
 
@@ -38,6 +39,7 @@ public class UserController {
     }
 
     @GetMapping("/me")
+    @Transactional(readOnly = true)
     public ResponseEntity<?> me(@CurrentUser AuthenticatedUser authenticatedUser) {
         Optional<Korisnik> korisnikOptional = korisnikRepository.findById(authenticatedUser.userId());
         if (korisnikOptional.isEmpty()) {
@@ -74,7 +76,7 @@ public class UserController {
         korisnik.setPrezime(request.prezime().trim());
         korisnik.setTelefon(request.telefon().trim());
         korisnik.setEmail(request.email().trim());
-        korisnik.setAzurirano(LocalDateTime.now());
+        korisnik.setAzurirano(currentUtcTime());
 
         korisnikRepository.save(korisnik);
         return ResponseEntity.ok(toUserProfileResponse(korisnik));
@@ -101,7 +103,7 @@ public class UserController {
 
         Korisnik korisnik = korisnikOptional.get();
         korisnik.setProfilnaSlika(imagePath);
-        korisnik.setAzurirano(LocalDateTime.now());
+        korisnik.setAzurirano(currentUtcTime());
         korisnikRepository.save(korisnik);
 
         return ResponseEntity.ok(new ProfileImageResponse(imagePath));
@@ -129,7 +131,7 @@ public class UserController {
 
         Korisnik korisnik = korisnikOptional.get();
         korisnik.setLozinka(passwordEncoder.encode(request.newPassword()));
-        korisnik.setAzurirano(LocalDateTime.now());
+        korisnik.setAzurirano(currentUtcTime());
         korisnikRepository.save(korisnik);
 
         return ResponseEntity.ok(Map.of("message", "Lozinka je uspesno promenjena"));
@@ -159,6 +161,10 @@ public class UserController {
 
     private boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    private LocalDateTime currentUtcTime() {
+        return LocalDateTime.now(ZoneOffset.UTC);
     }
 
     private boolean isPasswordValid(String password) {

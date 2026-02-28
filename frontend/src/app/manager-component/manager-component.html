@@ -1,1 +1,106 @@
 <app-profile-component></app-profile-component>
+
+<div>
+	<h3>Prostori firme</h3>
+
+	<p *ngIf="spacesLoading">Ucitavanje prostora...</p>
+	<p *ngIf="spacesError">{{ spacesError }}</p>
+
+	<table *ngIf="!spacesLoading && spaces.length > 0" border="1" cellspacing="0" cellpadding="6">
+		<thead>
+			<tr>
+				<th>Naziv prostora</th>
+				<th>Grad</th>
+				<th>Status</th>
+				<th>Elementi prostora</th>
+				<th>Akcije</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr *ngFor="let space of spaces">
+				<td>{{ space.naziv }}</td>
+				<td>{{ space.grad }}</td>
+				<td>{{ space.status }}</td>
+				<td>
+					<div>
+						<strong>Otvoreni prostor:</strong>
+						<span *ngIf="space.elements?.openSpace; else noOpenSpace">
+							{{ space.elements?.openSpace?.brojStolova }} stolova
+						</span>
+						<ng-template #noOpenSpace>Nije definisan</ng-template>
+					</div>
+
+					<div>
+						<strong>Kancelarije:</strong>
+						<span *ngIf="space.elements?.offices?.length; else noOffices">
+							<span *ngFor="let office of space.elements?.offices; let i = index">
+								{{ office.naziv }} ({{ office.brojStolova }} stolova)<span *ngIf="i < (space.elements?.offices?.length ?? 0) - 1">, </span>
+							</span>
+						</span>
+						<ng-template #noOffices>Nema kancelarija</ng-template>
+					</div>
+
+					<div>
+						<strong>Konferencijske sale:</strong>
+						<span *ngIf="space.elements?.meetingRooms?.length; else noRooms">
+							<span *ngFor="let room of space.elements?.meetingRooms; let i = index">
+								{{ room.naziv }}<span *ngIf="i < (space.elements?.meetingRooms?.length ?? 0) - 1">, </span>
+							</span>
+						</span>
+						<ng-template #noRooms>Nema konferencijskih sala</ng-template>
+					</div>
+				</td>
+				<td>
+					<button type="button" (click)="open_update(space.id)">Dodaj podprostor</button>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<p *ngIf="!spacesLoading && !spacesError && spaces.length === 0">Nema prostora za prikaz.</p>
+
+	<button type="button" (click)="open_add()">Dodaj prostor</button>
+
+</div>
+
+<div>
+	<h3>Trenutne rezervacije</h3>
+
+	<p *ngIf="reservationsLoading">Ucitavanje rezervacija...</p>
+	<p *ngIf="reservationsError">{{ reservationsError }}</p>
+	<p *ngIf="reservationsSuccess">{{ reservationsSuccess }}</p>
+
+	<table *ngIf="!reservationsLoading && reservations.length > 0" border="1" cellspacing="0" cellpadding="6">
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>Clan</th>
+				<th>Prostor</th>
+				<th>Tip</th>
+				<th>Resurs</th>
+				<th>Od</th>
+				<th>Do</th>
+				<th>Status</th>
+				<th>Akcije</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr *ngFor="let reservation of reservations">
+				<td>{{ reservation.id }}</td>
+				<td>{{ reservation.member?.username }}</td>
+				<td>{{ reservation.spaceId }}</td>
+				<td>{{ reservation.type }}</td>
+				<td>{{ reservation.resourceName }}</td>
+				<td>{{ format_datetime_local(reservation.from) }}</td>
+				<td>{{ format_datetime_local(reservation.to) }}</td>
+				<td>{{ reservation.status }}</td>
+				<td>
+					<button type="button" (click)="confirm_reservation(reservation.id)" [disabled]="!can_manage_on_front(reservation)">Potvrdi</button>
+					<button type="button" (click)="no_show_reservation(reservation.id)" [disabled]="!can_manage_on_front(reservation)">Odjavi</button>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<p *ngIf="!reservationsLoading && !reservationsError && reservations.length === 0">Nema trenutnih rezervacija.</p>
+</div>

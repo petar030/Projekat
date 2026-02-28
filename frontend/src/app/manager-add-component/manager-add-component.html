@@ -1,0 +1,73 @@
+<h2>Dodavanje prostora</h2>
+
+<div>
+	<button type="button" (click)="setMode('forma')" [disabled]="mode === 'forma'">Forma</button>
+	<button type="button" (click)="setMode('json')" [disabled]="mode === 'json'">JSON import</button>
+	<button type="button" (click)="goBack()">Nazad</button>
+</div>
+
+<div>
+	<label>Slike (opciono, max 5)</label>
+	<input type="file" multiple accept="image/*" (change)="onImagesSelected($event)">
+	<div *ngIf="imageInfo">Izabrano: {{ imageInfo }}</div>
+</div>
+
+<div *ngIf="mode === 'forma'">
+	<h3>Dodavanje preko forme</h3>
+
+	<div>
+		<label>Naziv *</label>
+		<input type="text" [(ngModel)]="naziv" name="naziv">
+	</div>
+
+	<div>
+		<label>Grad *</label>
+		<input type="text" [(ngModel)]="grad" name="grad">
+	</div>
+
+	<div>
+		<label>Adresa *</label>
+		<input type="text" [(ngModel)]="adresa" name="adresa">
+	</div>
+
+	<div>
+		<label>Opis</label>
+		<textarea [(ngModel)]="opis" name="opis"></textarea>
+	</div>
+
+	<div>
+		<label>Cena po satu *</label>
+		<input type="number" [(ngModel)]="cenaPoSatu" name="cenaPoSatu" min="1">
+	</div>
+
+	<div>
+		<label>Prag kazni *</label>
+		<input type="number" [(ngModel)]="pragKazni" name="pragKazni" min="1">
+	</div>
+
+	<div>
+		<label>Lokacija na mapi (klikom postavljaš marker)</label>
+		<div #spaceMap class="space-map"></div>
+		<div *ngIf="geografskaSirina != null && geografskaDuzina != null" class="coordinates">
+			Izabrane koordinate: {{ geografskaSirina }}, {{ geografskaDuzina }}
+		</div>
+	</div>
+
+	<div>
+		<label>Broj stolova open space *</label>
+		<input type="number" [(ngModel)]="openSpaceBrojStolova" name="openSpaceBrojStolova" min="1">
+	</div>
+
+	<button type="button" (click)="submitForm()">Kreiraj prostor</button>
+</div>
+
+<div *ngIf="mode === 'json'">
+	<h3>Dodavanje preko JSON-a</h3>
+	<input type="file" accept=".json,application/json" (change)="onJsonFileSelected($event)">
+	<div *ngIf="jsonFileInfo">Izabrani fajl: {{ jsonFileInfo }}</div>
+
+	<button type="button" (click)="submitJson()">Uvezi prostor iz JSON-a</button>
+</div>
+
+<div *ngIf="successMessage" style="color: green; margin-top: 12px;">{{ successMessage }}</div>
+<div *ngIf="errorMessage" style="color: red; margin-top: 12px;">{{ errorMessage }}</div>

@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -167,8 +168,8 @@ public class AuthController {
             return ResponseEntity.badRequest()
                     .body(new RegistrationResponse(null, request.username(), "clan", "na_cekanju", ex.getMessage()));
         }
-        korisnik.setKreirano(LocalDateTime.now());
-        korisnik.setAzurirano(LocalDateTime.now());
+        korisnik.setKreirano(currentUtcTime());
+        korisnik.setAzurirano(currentUtcTime());
 
         korisnik = korisnikRepository.save(korisnik);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -243,8 +244,8 @@ public class AuthController {
             return ResponseEntity.badRequest()
                     .body(new RegistrationResponse(null, request.username(), "menadzer", "na_cekanju", ex.getMessage()));
         }
-        korisnik.setKreirano(LocalDateTime.now());
-        korisnik.setAzurirano(LocalDateTime.now());
+        korisnik.setKreirano(currentUtcTime());
+        korisnik.setAzurirano(currentUtcTime());
 
         korisnik = korisnikRepository.save(korisnik);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -273,14 +274,14 @@ public class AuthController {
         tokenZaResetLozinkeRepository.saveAll(stariTokeni);
 
         String token = UUID.randomUUID().toString();
-        LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(RESET_TOKEN_EXPIRES_SECONDS);
+        LocalDateTime expiresAt = currentUtcTime().plusSeconds(RESET_TOKEN_EXPIRES_SECONDS);
 
         TokenZaResetLozinke resetToken = new TokenZaResetLozinke();
         resetToken.setKorisnik(korisnik);
         resetToken.setToken(token);
         resetToken.setIstice(expiresAt);
         resetToken.setIskoriscen(false);
-        resetToken.setKreirano(LocalDateTime.now());
+        resetToken.setKreirano(currentUtcTime());
         tokenZaResetLozinkeRepository.save(resetToken);
 
         return ResponseEntity.status(HttpStatus.ACCEPTED)
@@ -308,7 +309,7 @@ public class AuthController {
         Korisnik user = tokenData.getKorisnik();
 
         user.setLozinka(passwordEncoder.encode(request.newPassword()));
-        user.setAzurirano(LocalDateTime.now());
+        user.setAzurirano(currentUtcTime());
         korisnikRepository.save(user);
 
         tokenData.setIskoriscen(true);
@@ -329,7 +330,7 @@ public class AuthController {
         }
 
         TokenZaResetLozinke resetToken = tokenData.get();
-        if (Boolean.TRUE.equals(resetToken.getIskoriscen()) || resetToken.getIstice().isBefore(LocalDateTime.now())) {
+        if (Boolean.TRUE.equals(resetToken.getIskoriscen()) || resetToken.getIstice().isBefore(currentUtcTime())) {
             return Optional.empty();
         }
         return Optional.of(resetToken);
@@ -359,9 +360,13 @@ public class AuthController {
         novaFirma.setAdresa(firmaRequest.adresa());
         novaFirma.setMaticniBroj(firmaRequest.maticniBroj());
         novaFirma.setPib(firmaRequest.pib());
-        novaFirma.setKreirano(LocalDateTime.now());
-        novaFirma.setAzurirano(LocalDateTime.now());
+        novaFirma.setKreirano(currentUtcTime());
+        novaFirma.setAzurirano(currentUtcTime());
         return firmaRepository.save(novaFirma);
+    }
+
+    private LocalDateTime currentUtcTime() {
+        return LocalDateTime.now(ZoneOffset.UTC);
     }
 
     private String resolveProfileImagePath(MultipartFile profileImage) {

@@ -24,6 +24,7 @@ import com.coworking_hub.app.security.CurrentUser;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,6 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -212,6 +214,16 @@ public class MemberController {
             return ResponseEntity.badRequest().body(Map.of("message", "Za dati prostor i tip ne postoje podprostori"));
         }
 
+        Map<Long, String> roomAdditionalEquipmentById = "sala".equals(normalizedType)
+            ? konferencijskaSalaRepository.findByProstorIdIn(List.of(spaceId)).stream()
+            .collect(Collectors.toMap(
+                KonferencijskaSala::getId,
+                KonferencijskaSala::getDodatnaOprema,
+                (first, second) -> first,
+                java.util.LinkedHashMap::new
+            ))
+            : Map.of();
+
         boolean hasInvalidIds = requestedResourceIds.stream().anyMatch(resourceId -> !resourceNamesById.containsKey(resourceId));
         if (hasInvalidIds) {
             return ResponseEntity.badRequest().body(Map.of("message", "Prosledjen je resourceId koji ne pripada trazenom prostoru/tipu"));
@@ -236,6 +248,9 @@ public class MemberController {
         List<ResourceAvailabilityDto> resources = requestedResourceIds.stream()
                 .map(resourceId -> {
                     List<BusySlotDto> busySlots;
+                String additionalEquipment = "sala".equals(normalizedType)
+                    ? roomAdditionalEquipmentById.get(resourceId)
+                    : null;
                     if ("otvoreni".equals(normalizedType)) {
                     int deskCount = openDeskCountsByResourceId.getOrDefault(resourceId, 0);
                     busySlots = fullyBookedSlotsForOpenSpace(resourceId, deskCount, reservations, weekStartAt, weekEndAt);
@@ -246,7 +261,7 @@ public class MemberController {
                         .sorted(Comparator.comparing(BusySlotDto::from))
                         .toList();
                     }
-                        return new ResourceAvailabilityDto(resourceId, resourceNamesById.get(resourceId), busySlots);
+                        return new ResourceAvailabilityDto(resourceId, resourceNamesById.get(resourceId), additionalEquipment, busySlots);
                 })
                 .toList();
 
@@ -311,7 +326,7 @@ public class MemberController {
         reservation.setDatumOd(request.from());
         reservation.setDatumDo(request.to());
         reservation.setStatus(StatusRezervacije.aktivna);
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = currentUtcTime();
         reservation.setKreirano(now);
         reservation.setAzurirano(now);
 
@@ -359,7 +374,7 @@ public class MemberController {
                     request.to()
             ));
         } catch (DataIntegrityViolationException ex) {
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                return ResponseEntity.status(HttpStatusCode.valueOf(422))
                     .body(Map.of("message", extractDataIntegrityMessage(ex, "Poslovno pravilo nije ispunjeno za rezervaciju")));
         }
     }
@@ -412,7 +427,7 @@ public class MemberController {
         reaction.setClan(memberOptional.get());
         reaction.setProstor(spaceOptional.get());
         reaction.setTip(tip);
-        reaction.setKreirano(LocalDateTime.now());
+        reaction.setKreirano(currentUtcTime());
 
         try {
             Reakcija saved = reakcijaRepository.save(reaction);
@@ -424,7 +439,7 @@ public class MemberController {
                     saved.getKreirano()
             ));
         } catch (DataIntegrityViolationException ex) {
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                return ResponseEntity.status(HttpStatusCode.valueOf(422))
                     .body(Map.of("message", "Nije dozvoljeno ostavljanje reakcije za ovaj prostor"));
         }
     }
@@ -458,7 +473,7 @@ public class MemberController {
         comment.setClan(memberOptional.get());
         comment.setProstor(spaceOptional.get());
         comment.setSadrzaj(text);
-        comment.setKreirano(LocalDateTime.now());
+        comment.setKreirano(currentUtcTime());
 
         try {
             Komentar saved = komentarRepository.save(comment);
@@ -471,7 +486,7 @@ public class MemberController {
                     saved.getKreirano()
             ));
         } catch (DataIntegrityViolationException ex) {
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                return ResponseEntity.status(HttpStatusCode.valueOf(422))
                     .body(Map.of("message", "Nije dozvoljeno ostavljanje komentara za ovaj prostor"));
         }
     }
@@ -521,12 +536,12 @@ public class MemberController {
 
         Rezervacija rezervacija = rezervacijaOptional.get();
         if (!isCancellable(rezervacija)) {
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                return ResponseEntity.status(HttpStatusCode.valueOf(422))
                     .body(Map.of("message", "Rezervaciju nije moguce otkazati manje od 12h pre pocetka ili ako nije aktivna"));
         }
 
         rezervacija.setStatus(StatusRezervacije.otkazana);
-        rezervacija.setAzurirano(LocalDateTime.now());
+        rezervacija.setAzurirano(currentUtcTime());
         rezervacijaRepository.save(rezervacija);
 
         return ResponseEntity.ok(new CancelReservationResponse(rezervacija.getId(), rezervacija.getStatus().name()));
@@ -551,7 +566,11 @@ public class MemberController {
         }
 
         LocalDateTime cancellationDeadline = rezervacija.getDatumOd().minusHours(12);
-        return LocalDateTime.now().isBefore(cancellationDeadline);
+        return currentUtcTime().isBefore(cancellationDeadline);
+    }
+
+    private LocalDateTime currentUtcTime() {
+        return LocalDateTime.now(ZoneOffset.UTC);
     }
 
     private List<Long> matchingSubspaceIds(
@@ -797,6 +816,7 @@ public class MemberController {
         public record ResourceAvailabilityDto(
             Long resourceId,
             String resourceName,
+            String additionalEquipment,
             List<BusySlotDto> busySlots
         ) {
         }

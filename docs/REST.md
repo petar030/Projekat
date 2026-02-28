@@ -507,6 +507,7 @@ Request:
 - `resourceIds` = lista ID-jeva podprostora za izabrani tip (najcesce iz `matchingSubspaceIds` iz pretrage)
 - `weekStart` (`YYYY-MM-DD`)
 - Svaki element u `resources` vraca i `resourceName`
+- Za `type = sala`, svaki element u `resources` opciono vraca i `additionalEquipment` (moze biti `null`)
 
 Response `200`:
 
@@ -519,6 +520,7 @@ Response `200`:
     {
       "resourceId": 34,
       "resourceName": "Office A",
+      "additionalEquipment": null,
       "busySlots": [
         {
           "from": "2026-02-23T09:00:00",
@@ -529,6 +531,13 @@ Response `200`:
     {
       "resourceId": 35,
       "resourceName": "Office B",
+      "additionalEquipment": null,
+      "busySlots": []
+    },
+    {
+      "resourceId": 2001,
+      "resourceName": "Sala Alfa",
+      "additionalEquipment": "TV i whiteboard",
       "busySlots": []
     }
   ]
@@ -722,12 +731,13 @@ Response `200`:
 }
 ```
 
-## 7.2 Kreiranje prostora (forma)
+## 7.2 Kreiranje prostora (samo openSpace + max 5 slika)
 
 - `POST /api/manager/spaces`
 - Auth: `menadzer`
+- Content-Type: `multipart/form-data`
 
-Request:
+Part `data` (JSON):
 
 ```json
 {
@@ -741,15 +751,11 @@ Request:
   "geografskaDuzina": 20.4000,
   "openSpace": {
     "brojStolova": 25
-  },
-  "offices": [
-    { "naziv": "Office A", "brojStolova": 3 }
-  ],
-  "meetingRooms": [
-    { "naziv": "Sala Alfa", "dodatnaOprema": "Projektor, TV" }
-  ]
+  }
 }
 ```
+
+Part `images[]` (opciono, maksimalno 5 fajlova).
 
 Response `201`:
 
@@ -761,29 +767,7 @@ Response `201`:
 }
 ```
 
-## 7.3 Azuriranje prostora
-
-- `PUT /api/manager/spaces/{spaceId}`
-- Auth: `menadzer`
-
-Request:
-
-```json
-{
-  "naziv": "Hub Novi Beograd Premium",
-  "grad": "Beograd",
-  "adresa": "Bulevar Zorana Djindjica 1",
-  "opis": "Azuriran opis",
-  "cenaPoSatu": 17.5,
-  "pragKazni": 4,
-  "geografskaSirina": 44.8101,
-  "geografskaDuzina": 20.4001
-}
-```
-
-Response `200`: azuriran space JSON.
-
-## 7.4 Dodavanje kancelarije
+## 7.3 Dodavanje kancelarije u postojeci prostor
 
 - `POST /api/manager/spaces/{spaceId}/offices`
 - Auth: `menadzer`
@@ -808,30 +792,7 @@ Response `201`:
 }
 ```
 
-## 7.5 Azuriranje kancelarije
-
-- `PUT /api/manager/offices/{officeId}`
-- Auth: `menadzer`
-
-Request:
-
-```json
-{
-  "naziv": "Office B1",
-  "brojStolova": 7
-}
-```
-
-Response `200`: azurirana kancelarija.
-
-## 7.6 Brisanje kancelarije
-
-- `DELETE /api/manager/offices/{officeId}`
-- Auth: `menadzer`
-
-Response `204`.
-
-## 7.7 Dodavanje konferencijske sale
+## 7.4 Dodavanje konferencijske sale u postojeci prostor
 
 - `POST /api/manager/spaces/{spaceId}/meeting-rooms`
 - Auth: `menadzer`
@@ -857,73 +818,39 @@ Response `201`:
 }
 ```
 
-## 7.8 Azuriranje konferencijske sale
-
-- `PUT /api/manager/meeting-rooms/{roomId}`
-- Auth: `menadzer`
-
-Request:
-
-```json
-{
-  "naziv": "Sala Beta XL",
-  "dodatnaOprema": "TV, whiteboard, kamera"
-}
-```
-
-Response `200`.
-
-## 7.9 Brisanje konferencijske sale
-
-- `DELETE /api/manager/meeting-rooms/{roomId}`
-- Auth: `menadzer`
-
-Response `204`.
-
-## 7.10 Azuriranje otvorenog prostora
-
-- `PUT /api/manager/spaces/{spaceId}/open-space`
-- Auth: `menadzer`
-
-Request:
-
-```json
-{
-  "brojStolova": 30
-}
-```
-
-Response `200`.
-
-## 7.11 Upload slika prostora
-
-- `POST /api/manager/spaces/{spaceId}/images`
-- Auth: `menadzer`
-- Content-Type: `multipart/form-data`
-- Part `images[]` (obavezno: 1-6 fajlova)
-
-Response `201`:
-
-```json
-{
-  "spaceId": 10,
-  "images": [
-    "/uploads/spaces/10/i1.jpg",
-    "/uploads/spaces/10/i2.jpg"
-  ]
-}
-```
-
-Napomena:
-- Backend tretira sve slike prostora jednako (nema trajno oznacene "glavne" slike).
-- Frontend preko kolacica pamti koju sliku korisnik trenutno prikazuje kao glavnu u galeriji.
-
-## 7.12 Brza konfiguracija iz JSON fajla
+## 7.5 Brza konfiguracija prostora (JSON + slike u jednom pozivu)
 
 - `POST /api/manager/spaces/import-json`
 - Auth: `menadzer`
 - Content-Type: `multipart/form-data`
-- Part `file`: `*.json`
+
+Part `data` (JSON, potpuna struktura prostora):
+
+```json
+{
+  "naziv": "Hub Novi Beograd",
+  "grad": "Beograd",
+  "adresa": "Bulevar Zorana Djindjica 1",
+  "opis": "Moderan coworking",
+  "cenaPoSatu": 15.0,
+  "pragKazni": 3,
+  "geografskaSirina": 44.8100,
+  "geografskaDuzina": 20.4000,
+  "openSpace": {
+    "brojStolova": 25
+  },
+  "offices": [
+    { "naziv": "Office A", "brojStolova": 3 },
+    { "naziv": "Office B", "brojStolova": 6 }
+  ],
+  "meetingRooms": [
+    { "naziv": "Sala Alfa", "dodatnaOprema": "Projektor, TV" },
+    { "naziv": "Sala Beta", "dodatnaOprema": "TV, whiteboard" }
+  ]
+}
+```
+
+Part `images[]` (opciono, maksimalno 5 fajlova) - svi se upload-uju u istom pozivu.
 
 Response `201`:
 
@@ -931,11 +858,15 @@ Response `201`:
 {
   "id": 78,
   "status": "na_cekanju",
-  "message": "Prostor iz JSON fajla je uspesno kreiran"
+  "message": "Prostor iz JSON payload-a je uspesno kreiran"
 }
 ```
 
-## 7.13 Rezervacije za menadzerove prostore
+Napomena:
+- Endpointi za azuriranje i brisanje elemenata prostora nisu deo ovog minimalnog flow-a.
+- Za 7.2 i 7.5 vazi pravilo: maksimalno 5 slika pri kreiranju prostora.
+
+## 7.6 Rezervacije za menadzerove prostore
 
 - `GET /api/manager/reservations`
 - Auth: `menadzer`
@@ -961,7 +892,7 @@ Response `200`:
 }
 ```
 
-## 7.14 Potvrda dolaska
+## 7.7 Potvrda dolaska
 
 - `PATCH /api/manager/reservations/{reservationId}/confirm`
 - Auth: `menadzer`
@@ -981,7 +912,7 @@ Response `200`:
 }
 ```
 
-## 7.15 Oznaci nepojavljivanje
+## 7.8 Oznaci nepojavljivanje
 
 - `PATCH /api/manager/reservations/{reservationId}/no-show`
 - Auth: `menadzer`
@@ -1002,7 +933,7 @@ Response `200`:
 }
 ```
 
-## 7.16 Kalendar menadzera
+## 7.9 Kalendar menadzera
 
 - `GET /api/manager/calendar`
 - Auth: `menadzer`
@@ -1028,7 +959,7 @@ Response `200`:
 }
 ```
 
-## 7.17 Drag-and-drop pomeranje termina
+## 7.10 Drag-and-drop pomeranje termina
 
 - `PATCH /api/manager/reservations/{reservationId}/move`
 - Auth: `menadzer`
@@ -1053,7 +984,7 @@ Response `200`:
 }
 ```
 
-## 7.18 Mesecni PDF izvestaj
+## 7.11 Mesecni PDF izvestaj
 
 - `GET /api/manager/reports/occupancy?spaceId={spaceId}&year=2026&month=2`
 - Auth: `menadzer`

@@ -45,4 +45,20 @@ public interface ProstorRepository extends JpaRepository<Prostor, Long> {
 		  and p.status = :status
 	""")
 	Optional<Prostor> findByIdAndStatus(@Param("id") Long id, @Param("status") StatusProstora status);
+
+	@Query("""
+		select p
+		from Prostor p
+		where p.firma.id = :firmaId
+		order by p.id asc
+	""")
+	List<Prostor> findByFirmaIdOrderByIdAsc(@Param("firmaId") Long firmaId);
+
+	@Query("""
+		select p
+		from Prostor p
+		where p.id = :id
+		  and p.firma.id = :firmaId
+	""")
+	Optional<Prostor> findByIdAndFirmaId(@Param("id") Long id, @Param("firmaId") Long firmaId);
 }

@@ -52,7 +52,7 @@
 			<div *ngFor="let comment of comments" [class.mine-comment]="comment.mine">
 				<p>
 					<strong>{{ comment.username }}</strong>
-					({{ comment.createdAt | date:'dd.MM.yyyy HH:mm' }})
+					({{ format_datetime_local(comment.createdAt) }})
 				</p>
 				<p>{{ comment.text }}</p>
 			</div>
@@ -80,10 +80,12 @@
 					({{ currentResourceIndex + 1 }}/{{ availabilityResources.length }})
 				</span>
 				<button type="button" (click)="nextResource()">→</button>
+				<p *ngIf="selectedType === 'sala'"><strong>Dodatna oprema:</strong> {{ currentResource()?.additionalEquipment || 'Nije navedena.' }}</p>
 			</div>
 
 			<div *ngIf="availabilityResources.length === 1">
 				<p><strong>Resurs:</strong> {{ currentResource()?.resourceName }}</p>
+				<p *ngIf="selectedType === 'sala'"><strong>Dodatna oprema:</strong> {{ currentResource()?.additionalEquipment || 'Nije navedena.' }}</p>
 			</div>
 
 			<div>

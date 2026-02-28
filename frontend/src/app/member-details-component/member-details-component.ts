@@ -59,7 +59,7 @@ export class MemberDetailsComponent implements OnInit {
   calendarOptions: CalendarOptions = {
     plugins: [timeGridPlugin],
     initialView: 'timeGridWeek',
-    timeZone: 'UTC',
+    timeZone: 'local',
     headerToolbar: false,
     firstDay: 1,
     allDaySlot: false,
@@ -231,8 +231,13 @@ export class MemberDetailsComponent implements OnInit {
       return;
     }
 
-    const from = `${this.selectedDate}T${this.fromTime}:00`;
-    const to = `${this.selectedDate}T${this.toTime}:00`;
+    const from = this.toUtcDateTimeString(this.selectedDate, this.fromTime);
+    const to = this.toUtcDateTimeString(this.selectedDate, this.toTime);
+
+    if (!from || !to) {
+      this.reservationError = 'Neispravan datum ili vreme rezervacije.';
+      return;
+    }
 
     this.memberService.create_reservation({
       spaceId: this.spaceId,
@@ -249,6 +254,19 @@ export class MemberDetailsComponent implements OnInit {
         this.reservationError = err?.error?.message ?? 'Neuspesno kreiranje rezervacije.';
       }
     });
+  }
+
+  private toUtcDateTimeString(datePart: string, timePart: string): string | null {
+    if (!datePart || !timePart) {
+      return null;
+    }
+
+    const localDate = new Date(`${datePart}T${timePart}:00`);
+    if (Number.isNaN(localDate.getTime())) {
+      return null;
+    }
+
+    return localDate.toISOString().slice(0, 19);
   }
 
   react(tip: 'svidjanje' | 'nesvidjanje'): void {
@@ -316,6 +334,23 @@ export class MemberDetailsComponent implements OnInit {
     });
   }
 
+  format_datetime_local(value?: string): string {
+    const parsed = this.parse_backend_utc(value);
+    if (!parsed) {
+      return '';
+    }
+
+    return parsed.toLocaleString('sr-RS', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+  }
+
   private getSavedImageIndex(spaceId: number, imagesCount: number): number {
     if (imagesCount <= 0) {
       return 0;
@@ -357,7 +392,7 @@ export class MemberDetailsComponent implements OnInit {
     const day = now.getDay();
     const diff = day === 0 ? -6 : 1 - day;
     now.setDate(now.getDate() + diff);
-    return now.toISOString().slice(0, 10);
+    return this.toLocalDateIso(now);
   }
 
   private buildMapUrl(lat?: number, lng?: number): SafeResourceUrl | null {
@@ -379,11 +414,20 @@ export class MemberDetailsComponent implements OnInit {
     const busySlots = this.currentResource()?.busySlots ?? [];
     const events: EventInput[] = busySlots
       .filter(slot => !!slot.from && !!slot.to)
-      .map(slot => ({
-        title: 'Zauzeto',
-        start: this.toUtcWallClockDate(slot.from),
-        end: this.toUtcWallClockDate(slot.to)
-      }));
+      .map(slot => {
+        const start = this.parse_backend_utc(slot.from);
+        const end = this.parse_backend_utc(slot.to);
+        if (!start || !end) {
+          return null;
+        }
+
+        return {
+          title: 'Zauzeto',
+          start,
+          end
+        } as EventInput;
+      })
+      .filter((event): event is EventInput => event !== null);
 
     this.calendarOptions = {
       ...this.calendarOptions,
@@ -391,33 +435,17 @@ export class MemberDetailsComponent implements OnInit {
     };
   }
 
-  private toUtcWallClockDate(value?: string): Date | undefined {
-    if (!value) {
-      return undefined;
-    }
-
-    const [datePart, timePart = '00:00:00'] = value.split('T');
-    const [yearString, monthString, dayString] = datePart.split('-');
-    const [hourString, minuteString, secondString = '0'] = timePart.split(':');
-
-    const year = Number(yearString);
-    const month = Number(monthString);
-    const day = Number(dayString);
-    const hour = Number(hourString);
-    const minute = Number(minuteString);
-    const second = Number(secondString);
-
-    if ([year, month, day, hour, minute, second].some(Number.isNaN)) {
-      return undefined;
-    }
-
-    return new Date(Date.UTC(year, month - 1, day, hour, minute, second));
-  }
-
   private addDays(isoDate: string, days: number): string {
     const value = new Date(`${isoDate}T00:00:00`);
     value.setDate(value.getDate() + days);
-    return value.toISOString().slice(0, 10);
+    return this.toLocalDateIso(value);
+  }
+
+  private toLocalDateIso(value: Date): string {
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   private isDateInDisplayedWeek(value: string): boolean {
@@ -434,6 +462,18 @@ export class MemberDetailsComponent implements OnInit {
 
   reservationDateMax(): string {
     return this.reservationWeekEndInclusive;
+  }
+
+  private parse_backend_utc(value?: string): Date | null {
+    if (!value) {
+      return null;
+    }
+
+    const normalized = value.replace(' ', 'T');
+    const hasOffset = /[zZ]|[+-]\d{2}:\d{2}$/.test(normalized);
+    const candidate = hasOffset ? normalized : `${normalized}Z`;
+    const parsed = new Date(candidate);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
 
 }
