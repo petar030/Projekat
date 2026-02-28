@@ -1,0 +1,51 @@
+
+<div>
+	<h3>Kalendar rezervacija</h3>
+
+	<p *ngIf="spacesLoading">Ucitavanje prostora...</p>
+	<p *ngIf="spacesError">{{ spacesError }}</p>
+
+	<div *ngIf="!spacesLoading && !spacesError" class="calendar-filters">
+		<div>
+			<label for="space">Prostor:</label>
+			<select id="space" [(ngModel)]="selectedSpaceId" (change)="onSpaceOrTypeChange()">
+				<option *ngFor="let space of spaces" [ngValue]="space.id">{{ space.naziv }} ({{ space.grad }})</option>
+			</select>
+		</div>
+
+		<div>
+			<label for="type">Tip:</label>
+			<select id="type" [(ngModel)]="selectedType" (change)="onSpaceOrTypeChange()">
+				<option value="otvoreni">Otvoreni prostor</option>
+				<option value="kancelarija">Kancelarija</option>
+				<option value="sala">Sala</option>
+			</select>
+		</div>
+
+		<div>
+			<label for="resource">Resurs:</label>
+			<select id="resource" [(ngModel)]="selectedResourceId">
+				<option *ngFor="let resource of resources" [ngValue]="resource.id">{{ resource.label }}</option>
+			</select>
+		</div>
+
+		<div>
+			<label for="from">From:</label>
+			<input id="from" type="datetime-local" [(ngModel)]="from" />
+		</div>
+
+		<div>
+			<label for="to">To:</label>
+			<input id="to" type="datetime-local" [(ngModel)]="to" />
+		</div>
+
+		<button type="button" (click)="loadCalendar()">Prikazi kalendar</button>
+	</div>
+
+	<p *ngIf="calendarLoading">Ucitavanje kalendara...</p>
+	<p *ngIf="calendarError">{{ calendarError }}</p>
+
+	<div>
+		<full-calendar [options]="calendarOptions"></full-calendar>
+	</div>
+</div>

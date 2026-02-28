@@ -334,6 +334,73 @@ class ManagerControllerTest {
                         .andExpect(jsonPath("$.message").value("Odjavljivanje je dozvoljeno samo u roku od 10 minuta od pocetka aktivne rezervacije"));
                     }
 
+                        @Test
+                        void calendarShouldReturnEventsForSelectedResourceAndInterval() throws Exception {
+                        Korisnik manager = buildManager(12L, 2L);
+                        Prostor space = buildSpace(10L, "Hub Dorcol", "Beograd", StatusProstora.odobren, 3, 2L);
+
+                        Rezervacija matchingReservation = buildReservation(
+                            801L,
+                            space,
+                            StatusRezervacije.aktivna,
+                            LocalDateTime.of(2026, 3, 10, 10, 0),
+                            LocalDateTime.of(2026, 3, 10, 12, 0)
+                        );
+                        matchingReservation.setKancelarija(buildOffice(1001L, 10L, "Office A", 4));
+
+                        Rezervacija otherResourceReservation = buildReservation(
+                            802L,
+                            space,
+                            StatusRezervacije.aktivna,
+                            LocalDateTime.of(2026, 3, 10, 11, 0),
+                            LocalDateTime.of(2026, 3, 10, 13, 0)
+                        );
+                        otherResourceReservation.setKancelarija(buildOffice(1002L, 10L, "Office B", 5));
+
+                        when(korisnikRepository.findById(12L)).thenReturn(Optional.of(manager));
+                        when(prostorRepository.findByIdAndFirmaId(10L, 2L)).thenReturn(Optional.of(space));
+                        when(kancelarijaRepository.findByProstorIdIn(List.of(10L))).thenReturn(List.of(
+                            buildOffice(1001L, 10L, "Office A", 4),
+                            buildOffice(1002L, 10L, "Office B", 5)
+                        ));
+                        when(rezervacijaRepository.findByProstorIdInAndStatusNotAndDatumDoGreaterThanAndDatumOdLessThanOrderByDatumOdAsc(
+                            List.of(10L),
+                            StatusRezervacije.otkazana,
+                            LocalDateTime.of(2026, 3, 10, 0, 0),
+                            LocalDateTime.of(2026, 3, 11, 0, 0)
+                        )).thenReturn(List.of(matchingReservation, otherResourceReservation));
+
+                        mockMvc.perform(get("/api/manager/calendar")
+                            .param("spaceId", "10")
+                            .param("type", "kancelarija")
+                            .param("resourceId", "1001")
+                            .param("from", "2026-03-10T00:00:00")
+                            .param("to", "2026-03-11T00:00:00")
+                            .requestAttr(JwtAuthInterceptor.AUTH_USER_ATTR, authenticatedUser(12L)))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.events.length()").value(1))
+                        .andExpect(jsonPath("$.events[0].reservationId").value(801))
+                        .andExpect(jsonPath("$.events[0].title").value("marko"))
+                        .andExpect(jsonPath("$.events[0].status").value("aktivna"));
+                        }
+
+                        @Test
+                        void calendarShouldRejectInvalidType() throws Exception {
+                        Korisnik manager = buildManager(12L, 2L);
+
+                        when(korisnikRepository.findById(12L)).thenReturn(Optional.of(manager));
+
+                        mockMvc.perform(get("/api/manager/calendar")
+                            .param("spaceId", "10")
+                            .param("type", "nepoznat")
+                            .param("resourceId", "1001")
+                            .param("from", "2026-03-10T00:00:00")
+                            .param("to", "2026-03-11T00:00:00")
+                            .requestAttr(JwtAuthInterceptor.AUTH_USER_ATTR, authenticatedUser(12L)))
+                        .andExpect(status().isBadRequest())
+                        .andExpect(jsonPath("$.message").value("Type mora biti otvoreni, kancelarija ili sala"));
+                        }
+
     private Korisnik buildManager(Long id, Long firmaId) {
         Firma firma = new Firma();
         firma.setId(firmaId);

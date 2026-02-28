@@ -1,0 +1,12 @@
+.calendar-filters {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 12px;
+	margin-bottom: 14px;
+}
+
+select,
+input,
+button {
+	padding: 6px;
+}

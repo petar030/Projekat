@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import {
+  ManagerCalendarResponse,
   ManagerCreateSpaceRequest,
   ManagerCreateSpaceResponse,
   ManagerCreateMeetingRoomRequest,
@@ -26,6 +27,20 @@ export class ManagerService {
 
   reservations() {
     return this.client.get<ManagerReservationsResponse>(`${this.apiUrl}/reservations`, { headers: this.auth_headers() });
+  }
+
+  calendar(spaceId: number, type: 'otvoreni' | 'kancelarija' | 'sala', resourceId: number, from: string, to: string) {
+    const params = new HttpParams()
+      .set('spaceId', spaceId)
+      .set('type', type)
+      .set('resourceId', resourceId)
+      .set('from', from)
+      .set('to', to);
+
+    return this.client.get<ManagerCalendarResponse>(`${this.apiUrl}/calendar`, {
+      headers: this.auth_headers(),
+      params
+    });
   }
 
   confirm_reservation(reservationId: number) {

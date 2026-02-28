@@ -23,11 +23,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -356,6 +358,78 @@ public class ManagerController {
                 return ResponseEntity.ok(new NoShowStatusResponse(reservation.getId(), reservation.getStatus().name(), true));
         }
 
+        @GetMapping("/calendar")
+        @Transactional(readOnly = true)
+        public ResponseEntity<?> calendar(
+                        @CurrentUser AuthenticatedUser authenticatedUser,
+                        @RequestParam Long spaceId,
+                        @RequestParam String type,
+                        @RequestParam Long resourceId,
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to
+        ) {
+                Optional<Korisnik> managerOptional = korisnikRepository.findById(authenticatedUser.userId());
+                if (managerOptional.isEmpty()) {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Korisnik nije pronadjen"));
+                }
+
+                Korisnik manager = managerOptional.get();
+                if (manager.getFirma() == null || manager.getFirma().getId() == null) {
+                        return ResponseEntity.badRequest().body(Map.of("message", "Menadzer nema dodeljenu firmu"));
+                }
+
+                if (spaceId == null || spaceId <= 0 || resourceId == null || resourceId <= 0 || isBlank(type) || from == null || to == null) {
+                        return ResponseEntity.badRequest().body(Map.of("message", "Neispravan request: spaceId, type, resourceId, from i to su obavezni"));
+                }
+
+                if (!to.isAfter(from)) {
+                        return ResponseEntity.badRequest().body(Map.of("message", "Neispravan interval: to mora biti posle from"));
+                }
+
+                String normalizedType = type.toLowerCase();
+                if (!List.of("otvoreni", "kancelarija", "sala").contains(normalizedType)) {
+                        return ResponseEntity.badRequest().body(Map.of("message", "Type mora biti otvoreni, kancelarija ili sala"));
+                }
+
+                Optional<Prostor> spaceOptional = prostorRepository.findByIdAndFirmaId(spaceId, manager.getFirma().getId());
+                if (spaceOptional.isEmpty()) {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Prostor nije pronadjen"));
+                }
+
+                boolean resourceBelongsToSpace = switch (normalizedType) {
+                        case "otvoreni" -> otvoreniProstorRepository.findByProstorIdIn(List.of(spaceId)).stream()
+                                        .anyMatch(item -> resourceId.equals(item.getId()));
+                        case "kancelarija" -> kancelarijaRepository.findByProstorIdIn(List.of(spaceId)).stream()
+                                        .anyMatch(item -> resourceId.equals(item.getId()));
+                        default -> konferencijskaSalaRepository.findByProstorIdIn(List.of(spaceId)).stream()
+                                        .anyMatch(item -> resourceId.equals(item.getId()));
+                };
+
+                if (!resourceBelongsToSpace) {
+                        return ResponseEntity.badRequest().body(Map.of("message", "Resource ne pripada trazenom prostoru/tipu"));
+                }
+
+                List<ManagerCalendarEventDto> events = rezervacijaRepository
+                                .findByProstorIdInAndStatusNotAndDatumDoGreaterThanAndDatumOdLessThanOrderByDatumOdAsc(
+                                                List.of(spaceId),
+                                                StatusRezervacije.otkazana,
+                                                from,
+                                                to
+                                )
+                                .stream()
+                                .filter(reservation -> resourceId.equals(resolveResourceId(normalizedType, reservation)))
+                                .map(reservation -> new ManagerCalendarEventDto(
+                                                reservation.getId(),
+                                                reservation.getClan().getKorisnickoIme(),
+                                                reservation.getDatumOd(),
+                                                reservation.getDatumDo(),
+                                                reservation.getStatus().name()
+                                ))
+                                .toList();
+
+                return ResponseEntity.ok(new ManagerCalendarResponse(events));
+        }
+
     @GetMapping("/spaces")
     @Transactional(readOnly = true)
     public ResponseEntity<?> spaces(@CurrentUser AuthenticatedUser authenticatedUser) {
@@ -465,6 +539,18 @@ public class ManagerController {
     public record NoShowStatusResponse(Long id, String status, boolean penaltyCreated) {
     }
 
+    public record ManagerCalendarResponse(List<ManagerCalendarEventDto> events) {
+    }
+
+    public record ManagerCalendarEventDto(
+            Long reservationId,
+            String title,
+            LocalDateTime from,
+            LocalDateTime to,
+            String status
+    ) {
+    }
+
         public record CreateSpaceRequest(
                         String naziv,
                         String grad,
@@ -517,6 +603,16 @@ public class ManagerController {
                         return reservation.getSala().getNaziv();
                 }
                 return "Nepoznat resurs";
+        }
+
+        private Long resolveResourceId(String type, Rezervacija reservation) {
+                if ("otvoreni".equals(type)) {
+                        return reservation.getOtvoreniProstor() == null ? null : reservation.getOtvoreniProstor().getId();
+                }
+                if ("kancelarija".equals(type)) {
+                        return reservation.getKancelarija() == null ? null : reservation.getKancelarija().getId();
+                }
+                return reservation.getSala() == null ? null : reservation.getSala().getId();
         }
 
         private boolean canConfirmOrNoShow(Rezervacija reservation, LocalDateTime now) {

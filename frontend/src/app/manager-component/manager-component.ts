@@ -58,6 +58,10 @@ export class ManagerComponent implements OnInit {
     this.router.navigate(['/manager_add']);
   }
 
+  open_calendar(): void {
+    this.router.navigate(['/manager_calendar']);
+  }
+
   load_reservations(): void {
     this.reservationsLoading = true;
     this.reservationsError = '';

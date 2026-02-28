@@ -46,4 +46,11 @@ public interface RezervacijaRepository extends JpaRepository<Rezervacija, Long> 
 	Optional<Rezervacija> findByIdAndClanId(Long id, Long clanId);
 
 	List<Rezervacija> findByProstorIdInAndStatusNotOrderByDatumOdAsc(List<Long> prostorIds, StatusRezervacije status);
+
+	List<Rezervacija> findByProstorIdInAndStatusNotAndDatumDoGreaterThanAndDatumOdLessThanOrderByDatumOdAsc(
+		List<Long> prostorIds,
+		StatusRezervacije status,
+		LocalDateTime datumOd,
+		LocalDateTime datumDo
+	);
 }

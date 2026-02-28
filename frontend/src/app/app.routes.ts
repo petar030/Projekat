@@ -11,6 +11,7 @@ import { MemberDetailsComponent } from './member-details-component/member-detail
 import { ManagerAddComponent } from './manager-add-component/manager-add-component';
 import { ManagerComponent } from './manager-component/manager-component';
 import { ManagerUpdateComponent } from './manager-update-component/manager-update-component';
+import { ManagerCalendar } from './manager-calendar/manager-calendar';
 import { AdminComponent } from './admin-component/admin-component';
 
 export const routes: Routes = [
@@ -24,6 +25,7 @@ export const routes: Routes = [
     {path: 'member', component: MemberComponent},
     {path: 'member_details/:id', component: MemberDetailsComponent},
     {path: 'manager', component: ManagerComponent},
+    {path: 'manager_calendar', component: ManagerCalendar},
     {path: 'manager_add', component: ManagerAddComponent},
     {path: 'manager_update/:id', component: ManagerUpdateComponent},
     {path: 'admin', component: AdminComponent}

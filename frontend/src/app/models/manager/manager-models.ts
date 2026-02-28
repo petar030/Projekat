@@ -108,3 +108,15 @@ export class ManagerReservationStatusResponse {
   status?: string;
   penaltyCreated?: boolean;
 }
+
+export class ManagerCalendarEvent {
+  reservationId?: number;
+  title?: string;
+  from?: string;
+  to?: string;
+  status?: string;
+}
+
+export class ManagerCalendarResponse {
+  events?: ManagerCalendarEvent[];
+}
