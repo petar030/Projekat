@@ -1,0 +1,5 @@
+<div class="app-header">
+	<button *ngIf="!isHomeRoute" type="button" (click)="go_back()">Nazad</button>
+	<button *ngIf="isHomeRoute" type="button" (click)="open_login()">Prijavi se</button>
+	<button *ngIf="!isHomeRoute" type="button" (click)="logout()">Odjavi se</button>
+</div>

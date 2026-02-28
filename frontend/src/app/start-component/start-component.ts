@@ -2,7 +2,9 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { AuthService } from '../services/auth/auth-service';
 import { PublicService } from '../services/public/public-service';
+import { UserService } from '../services/user/user-service';
 import { PublicHomeSpace, PublicSearchItem } from '../models/public/public-models';
 
 @Component({
@@ -14,6 +16,8 @@ import { PublicHomeSpace, PublicSearchItem } from '../models/public/public-model
 export class StartComponent implements OnInit {
 
   private publicService = inject(PublicService);
+  private userService = inject(UserService);
+  private authService = inject(AuthService);
   private router = inject(Router);
 
   top5Spaces: PublicHomeSpace[] = [];
@@ -30,6 +34,24 @@ export class StartComponent implements OnInit {
   errorMessage: string = '';
 
   ngOnInit(): void {
+    const token = localStorage.getItem('userToken') || localStorage.getItem('accessToken');
+    if (token) {
+      this.userService.me().subscribe({
+        next: (response) => {
+          this.authService.navigate_for_role(response?.uloga);
+        },
+        error: () => {
+          this.authService.clear_session();
+          this.load_public_data();
+        }
+      });
+      return;
+    }
+
+    this.load_public_data();
+  }
+
+  private load_public_data(): void {
     this.loadHome();
     this.loadCities();
     this.searchSpaces();

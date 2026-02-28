@@ -2,7 +2,6 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../services/auth/auth-service';
-import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-admin-login-component',
@@ -13,7 +12,6 @@ import { Router } from '@angular/router';
 export class AdminLoginComponent {
 
   private authService = inject(AuthService);
-  private router = inject(Router);
 
   username: string = '';
   password: string = '';
@@ -24,8 +22,8 @@ export class AdminLoginComponent {
 
     this.authService.admin_login(this.username, this.password).subscribe({
       next: (response: any) => {
-        localStorage.setItem('userToken', response.accessToken);
-        this.router.navigate(['/admin']);
+        this.authService.save_session(response);
+        this.authService.navigate_for_role(response?.user?.role);
       },
       error: (err) => {
         if (err?.status === 0) {

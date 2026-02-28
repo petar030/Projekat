@@ -1,6 +1,5 @@
 import { Component, inject } from '@angular/core';
 import { AuthService } from '../services/auth/auth-service';
-import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -14,7 +13,6 @@ import { FormsModule } from '@angular/forms';
 export class LoginComponent {
 
   private authService = inject(AuthService);
-  private router = inject(Router);
   username: string = '';
   password: string = '';
   errorMessage: string = '';
@@ -25,19 +23,8 @@ export class LoginComponent {
 
     this.authService.login(this.username, this.password).subscribe({
       next: (response: any) => {
-        localStorage.setItem('userToken', response.accessToken);
-        if (response?.user?.username) {
-          localStorage.setItem('userUsername', response.user.username);
-        }
-        if (response?.user?.id !== undefined && response?.user?.id !== null) {
-          localStorage.setItem('userId', String(response.user.id));
-        }
-        if(response.user.role === 'clan'){
-          this.router.navigate(['/member']);
-        } else if(response.user.role === 'menadzer'){
-          //console.log("Prijavljen menadzer, id: " + response.user.id);
-          this.router.navigate(['/manager']);
-        }
+        this.authService.save_session(response);
+        this.authService.navigate_for_role(response?.user?.role);
       },
       error: (err) => {
         if (err?.status === 0) {
