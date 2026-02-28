@@ -64,6 +64,8 @@
 
 </div>
 
+
+
 <div>
 	<h3>Trenutne rezervacije</h3>
 
@@ -104,4 +106,36 @@
 	</table>
 
 	<p *ngIf="!reservationsLoading && !reservationsError && reservations.length === 0">Nema trenutnih rezervacija.</p>
+</div>
+
+
+<div>
+	<h3>Mesecni PDF izvestaj popunjenosti</h3>
+
+	<div>
+		<label for="report-space">Prostor:</label>
+		<select id="report-space" [(ngModel)]="reportSpaceId">
+			<option *ngFor="let space of spaces" [ngValue]="space.id">{{ space.naziv }} ({{ space.grad }})</option>
+		</select>
+	</div>
+
+	<div>
+		<label for="report-year">Godina:</label>
+		<select id="report-year" [(ngModel)]="reportYear">
+			<option *ngFor="let year of reportYears" [ngValue]="year">{{ year }}</option>
+		</select>
+	</div>
+
+	<div>
+		<label for="report-month">Mesec:</label>
+		<select id="report-month" [(ngModel)]="reportMonthNumber">
+			<option *ngFor="let month of reportMonths" [ngValue]="month.value">{{ month.label }}</option>
+		</select>
+	</div>
+
+	<button type="button" (click)="generate_report()" [disabled]="reportLoading">Generisi izvestaj</button>
+
+	<p *ngIf="reportLoading">Generisanje izvestaja...</p>
+	<p *ngIf="reportError">{{ reportError }}</p>
+	<p *ngIf="reportSuccess">{{ reportSuccess }}</p>
 </div>

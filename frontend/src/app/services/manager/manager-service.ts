@@ -7,6 +7,8 @@ import {
   ManagerCreateMeetingRoomRequest,
   ManagerCreateOfficeRequest,
   ManagerMeetingRoomResponse,
+  ManagerMoveReservationRequest,
+  ManagerMoveReservationResponse,
   ManagerOfficeResponse,
   ManagerReservationsResponse,
   ManagerReservationStatusResponse,
@@ -49,6 +51,28 @@ export class ManagerService {
 
   no_show_reservation(reservationId: number) {
     return this.client.patch<ManagerReservationStatusResponse>(`${this.apiUrl}/reservations/${reservationId}/no-show`, {}, { headers: this.auth_headers() });
+  }
+
+  move_reservation(reservationId: number, request: ManagerMoveReservationRequest) {
+    return this.client.patch<ManagerMoveReservationResponse>(
+      `${this.apiUrl}/reservations/${reservationId}/move`,
+      request,
+      { headers: this.auth_headers() }
+    );
+  }
+
+  occupancy_report(spaceId: number, year: number, month: number) {
+    const params = new HttpParams()
+      .set('spaceId', spaceId)
+      .set('year', year)
+      .set('month', month);
+
+    return this.client.get(`${this.apiUrl}/reports/occupancy`, {
+      headers: this.auth_headers(),
+      params,
+      responseType: 'blob',
+      observe: 'response'
+    });
   }
 
   add_office(spaceId: number, data: ManagerCreateOfficeRequest) {

@@ -990,30 +990,19 @@ Response `200`:
 - Auth: `menadzer`
 - Response content-type: `application/pdf`
 
-Response `200`: binarni PDF.
+Backend je jedini izvor istine za izvestaj i kompletan obracun popunjenosti.
+Frontend ne racuna procente, vec samo salje parametre i preuzima PDF fajl.
 
-Opcioni meta endpoint:
-
-- `GET /api/manager/reports/occupancy/summary?spaceId={spaceId}&year=2026&month=2`
+Pravila:
+- `month` mora biti u opsegu `1-12`.
+- Mesec moze biti samo tekuci ili prosli (ne buduci).
+- Izvestaj obuhvata sve elemente prostora (`otvoreni`, sve `kancelarije`, sve `sale`).
+- U obracun ulaze rezervacije koje se preklapaju sa izabranim mesecom, bez `otkazana` i bez `nepojavljivanje` statusa.
+- PDF sadrzi zbirnu popunjenost kapaciteta i breakdown po svakom podprostoru.
 
 Response `200`:
-
-```json
-{
-  "spaceId": 10,
-  "year": 2026,
-  "month": 2,
-  "occupancyPercent": 73.4,
-  "resourceBreakdown": [
-    {
-      "type": "kancelarija",
-      "resourceId": 34,
-      "resourceName": "Office A",
-      "occupancyPercent": 80.1
-    }
-  ]
-}
-```
+- binarni PDF fajl
+- `Content-Disposition: attachment; filename="occupancy-space-<spaceId>-<year>-<month>.pdf"`
 
 ---
 

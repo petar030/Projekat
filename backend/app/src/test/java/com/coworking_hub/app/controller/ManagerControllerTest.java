@@ -20,6 +20,7 @@ import com.coworking_hub.app.security.AuthenticatedUser;
 import com.coworking_hub.app.security.CurrentUserArgumentResolver;
 import com.coworking_hub.app.security.JwtAuthInterceptor;
 import com.coworking_hub.app.service.ImageStorageService;
+import com.coworking_hub.app.service.ManagerOccupancyReportService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,6 +44,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
 @ExtendWith(MockitoExtension.class)
 class ManagerControllerTest {
@@ -73,6 +76,9 @@ class ManagerControllerTest {
     @Mock
     private ImageStorageService imageStorageService;
 
+    @Mock
+    private ManagerOccupancyReportService managerOccupancyReportService;
+
     @BeforeEach
     void setUp() {
         ManagerController managerController = new ManagerController(
@@ -83,7 +89,8 @@ class ManagerControllerTest {
                 konferencijskaSalaRepository,
                 rezervacijaRepository,
                 slikaProstoraRepository,
-                imageStorageService
+                imageStorageService,
+                managerOccupancyReportService
         );
         mockMvc = MockMvcBuilders.standaloneSetup(managerController)
                 .setCustomArgumentResolvers(new CurrentUserArgumentResolver())
@@ -399,6 +406,146 @@ class ManagerControllerTest {
                             .requestAttr(JwtAuthInterceptor.AUTH_USER_ATTR, authenticatedUser(12L)))
                         .andExpect(status().isBadRequest())
                         .andExpect(jsonPath("$.message").value("Type mora biti otvoreni, kancelarija ili sala"));
+                        }
+
+                        @Test
+                        void moveReservationShouldUpdateTimeWhenNoConflict() throws Exception {
+                        Korisnik manager = buildManager(12L, 2L);
+                        Prostor space = buildSpace(10L, "Hub Dorcol", "Beograd", StatusProstora.odobren, 3, 2L);
+
+                        Rezervacija reservation = buildReservation(
+                            901L,
+                            space,
+                            StatusRezervacije.aktivna,
+                            LocalDateTime.of(2026, 3, 10, 10, 0),
+                            LocalDateTime.of(2026, 3, 10, 12, 0)
+                        );
+                        reservation.setKancelarija(buildOffice(1001L, 10L, "Office A", 4));
+
+                        when(korisnikRepository.findById(12L)).thenReturn(Optional.of(manager));
+                        when(rezervacijaRepository.findById(901L)).thenReturn(Optional.of(reservation));
+                        when(rezervacijaRepository.findByProstorIdAndStatusNotAndDatumDoGreaterThanAndDatumOdLessThan(
+                            10L,
+                            StatusRezervacije.otkazana,
+                            LocalDateTime.of(2026, 3, 10, 11, 0),
+                            LocalDateTime.of(2026, 3, 10, 13, 0)
+                        )).thenReturn(List.of(reservation));
+                        when(rezervacijaRepository.save(any(Rezervacija.class))).thenReturn(reservation);
+
+                        mockMvc.perform(patch("/api/manager/reservations/901/move")
+                            .contentType("application/json")
+                            .content("""
+                                {
+                                  \"from\": \"2026-03-10T11:00:00\",
+                                  \"to\": \"2026-03-10T13:00:00\"
+                                }
+                                """)
+                            .requestAttr(JwtAuthInterceptor.AUTH_USER_ATTR, authenticatedUser(12L)))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.id").value(901))
+                        .andExpect(jsonPath("$.from").value("2026-03-10T11:00:00"))
+                        .andExpect(jsonPath("$.to").value("2026-03-10T13:00:00"))
+                        .andExpect(jsonPath("$.status").value("aktivna"));
+                        }
+
+                        @Test
+                        void moveReservationShouldFailWhenConflictExists() throws Exception {
+                        Korisnik manager = buildManager(12L, 2L);
+                        Prostor space = buildSpace(10L, "Hub Dorcol", "Beograd", StatusProstora.odobren, 3, 2L);
+
+                        Rezervacija moving = buildReservation(
+                            902L,
+                            space,
+                            StatusRezervacije.aktivna,
+                            LocalDateTime.of(2026, 3, 10, 10, 0),
+                            LocalDateTime.of(2026, 3, 10, 12, 0)
+                        );
+                        moving.setKancelarija(buildOffice(1001L, 10L, "Office A", 4));
+
+                        Rezervacija conflicting = buildReservation(
+                            903L,
+                            space,
+                            StatusRezervacije.aktivna,
+                            LocalDateTime.of(2026, 3, 10, 11, 30),
+                            LocalDateTime.of(2026, 3, 10, 12, 30)
+                        );
+                        conflicting.setKancelarija(buildOffice(1001L, 10L, "Office A", 4));
+
+                        when(korisnikRepository.findById(12L)).thenReturn(Optional.of(manager));
+                        when(rezervacijaRepository.findById(902L)).thenReturn(Optional.of(moving));
+                        when(rezervacijaRepository.findByProstorIdAndStatusNotAndDatumDoGreaterThanAndDatumOdLessThan(
+                            10L,
+                            StatusRezervacije.otkazana,
+                            LocalDateTime.of(2026, 3, 10, 11, 0),
+                            LocalDateTime.of(2026, 3, 10, 13, 0)
+                        )).thenReturn(List.of(moving, conflicting));
+
+                        mockMvc.perform(patch("/api/manager/reservations/902/move")
+                            .contentType("application/json")
+                            .content("""
+                                {
+                                  \"from\": \"2026-03-10T11:00:00\",
+                                  \"to\": \"2026-03-10T13:00:00\"
+                                }
+                                """)
+                            .requestAttr(JwtAuthInterceptor.AUTH_USER_ATTR, authenticatedUser(12L)))
+                        .andExpect(status().isConflict())
+                        .andExpect(jsonPath("$.message").value("Termin je vec zauzet za izabrani resurs"));
+                        }
+
+                        @Test
+                        void monthlyOccupancyReportShouldReturnPdf() throws Exception {
+                        Korisnik manager = buildManager(12L, 2L);
+                        Prostor space = buildSpace(10L, "Hub Dorcol", "Beograd", StatusProstora.odobren, 3, 2L);
+
+                        when(korisnikRepository.findById(12L)).thenReturn(Optional.of(manager));
+                        when(prostorRepository.findByIdAndFirmaId(10L, 2L)).thenReturn(Optional.of(space));
+                        when(otvoreniProstorRepository.findByProstorIdIn(List.of(10L))).thenReturn(List.of(
+                            buildOpenSpace(3001L, 10L, 20)
+                        ));
+                        when(kancelarijaRepository.findByProstorIdIn(List.of(10L))).thenReturn(List.of(
+                            buildOffice(1001L, 10L, "Office A", 4)
+                        ));
+                        when(konferencijskaSalaRepository.findByProstorIdIn(List.of(10L))).thenReturn(List.of(
+                            buildMeetingRoom(2001L, 10L, "Sala Alfa", 10, "TV")
+                        ));
+                        when(rezervacijaRepository.findByProstorIdInAndStatusNotAndDatumDoGreaterThanAndDatumOdLessThanOrderByDatumOdAsc(
+                            List.of(10L),
+                            StatusRezervacije.otkazana,
+                            LocalDateTime.of(2026, 2, 1, 0, 0),
+                            LocalDateTime.of(2026, 3, 1, 0, 0)
+                        )).thenReturn(List.of());
+                        when(managerOccupancyReportService.generateMonthlyOccupancyPdf(
+                            any(Prostor.class),
+                            any(),
+                            any(),
+                            any(),
+                            any(),
+                            any()
+                        )).thenReturn("fake-pdf".getBytes());
+
+                        mockMvc.perform(get("/api/manager/reports/occupancy")
+                            .param("spaceId", "10")
+                            .param("year", "2026")
+                            .param("month", "2")
+                            .requestAttr(JwtAuthInterceptor.AUTH_USER_ATTR, authenticatedUser(12L)))
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType("application/pdf"))
+                        .andExpect(header().string("Content-Disposition", "attachment; filename=\"occupancy-space-10-2026-02.pdf\""));
+                        }
+
+                        @Test
+                        void monthlyOccupancyReportShouldRejectFutureMonth() throws Exception {
+                        Korisnik manager = buildManager(12L, 2L);
+                        when(korisnikRepository.findById(12L)).thenReturn(Optional.of(manager));
+
+                        mockMvc.perform(get("/api/manager/reports/occupancy")
+                            .param("spaceId", "10")
+                            .param("year", "2099")
+                            .param("month", "12")
+                            .requestAttr(JwtAuthInterceptor.AUTH_USER_ATTR, authenticatedUser(12L)))
+                        .andExpect(status().isBadRequest())
+                        .andExpect(jsonPath("$.message").value("Izvestaj je dozvoljen samo za tekuci ili prosli mesec"));
                         }
 
     private Korisnik buildManager(Long id, Long firmaId) {

@@ -165,7 +165,6 @@ export class MemberDetailsComponent implements OnInit {
       weekStart: this.weekStart
     }).subscribe({
       next: (response) => {
-        console.log('[member-details] availability response:', response);
         this.availabilityResources = response.resources ?? [];
         if (selectedResourceId) {
           const selectedIndex = this.availabilityResources.findIndex(item => item.resourceId === selectedResourceId);
@@ -173,7 +172,6 @@ export class MemberDetailsComponent implements OnInit {
         } else {
           this.currentResourceIndex = 0;
         }
-        console.log('[member-details] selected resource busySlots:', this.currentResource()?.busySlots ?? []);
         this.updateCalendarEvents();
         this.availabilityLoading = false;
       },

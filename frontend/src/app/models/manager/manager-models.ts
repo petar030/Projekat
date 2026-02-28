@@ -120,3 +120,15 @@ export class ManagerCalendarEvent {
 export class ManagerCalendarResponse {
   events?: ManagerCalendarEvent[];
 }
+
+export class ManagerMoveReservationRequest {
+  from?: string;
+  to?: string;
+}
+
+export class ManagerMoveReservationResponse {
+  id?: number;
+  from?: string;
+  to?: string;
+  status?: string;
+}

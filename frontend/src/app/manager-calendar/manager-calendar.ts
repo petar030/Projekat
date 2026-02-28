@@ -2,9 +2,9 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FullCalendarModule } from '@fullcalendar/angular';
-import { CalendarOptions, EventInput } from '@fullcalendar/core';
+import { CalendarOptions, EventDropArg, EventInput } from '@fullcalendar/core';
+import interactionPlugin from '@fullcalendar/interaction';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import { ProfileComponent } from '../profile-component/profile-component';
 import { ManagerSpaceItem } from '../models/manager/manager-models';
 import { ManagerService } from '../services/manager/manager-service';
 
@@ -34,13 +34,17 @@ export class ManagerCalendar implements OnInit {
   calendarError: string = '';
 
   calendarOptions: CalendarOptions = {
-    plugins: [timeGridPlugin],
+    plugins: [timeGridPlugin, interactionPlugin],
     initialView: 'timeGridWeek',
     timeZone: 'local',
-    editable: false,
-    eventStartEditable: false,
+    editable: true,
+    dragScroll: false,
+    eventStartEditable: true,
     eventDurationEditable: false,
+    snapDuration: '00:30:00',
+    slotDuration: '00:30:00',
     selectable: false,
+    eventDrop: this.onEventDrop.bind(this),
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
@@ -81,51 +85,28 @@ export class ManagerCalendar implements OnInit {
 
   loadCalendar(): void {
     this.calendarError = '';
-    console.log('[manager-calendar] loadCalendar called', {
-      selectedSpaceId: this.selectedSpaceId,
-      selectedType: this.selectedType,
-      selectedResourceId: this.selectedResourceId,
-      from: this.from,
-      to: this.to
-    });
 
     if (!this.selectedSpaceId || !this.selectedResourceId || !this.from || !this.to) {
       this.calendarError = 'Prostor, tip, resurs, from i to su obavezni.';
-      console.log('[manager-calendar] loadCalendar blocked by validation', {
-        selectedSpaceId: this.selectedSpaceId,
-        selectedResourceId: this.selectedResourceId,
-        from: this.from,
-        to: this.to
-      });
       return;
     }
 
-    const fromIso = this.toLocalDateTimeIso(this.from);
-    const toIso = this.toLocalDateTimeIso(this.to);
+    const fromIso = this.toUtcDateTimeIsoFromInput(this.from);
+    const toIso = this.toUtcDateTimeIsoFromInput(this.to);
     if (!fromIso || !toIso) {
       this.calendarError = 'Neispravan from/to format.';
-      console.log('[manager-calendar] invalid from/to format', { fromIso, toIso });
       return;
     }
 
     if (new Date(this.from).getTime() >= new Date(this.to).getTime()) {
       this.calendarError = 'to mora biti posle from.';
-      console.log('[manager-calendar] invalid range, to <= from', { from: this.from, to: this.to });
       return;
     }
 
     this.calendarLoading = true;
-    console.log('[manager-calendar] sending request', {
-      spaceId: this.selectedSpaceId,
-      type: this.selectedType,
-      resourceId: this.selectedResourceId,
-      from: fromIso,
-      to: toIso
-    });
     this.managerService.calendar(this.selectedSpaceId, this.selectedType, this.selectedResourceId, fromIso, toIso)
       .subscribe({
         next: (response) => {
-          console.log('[manager-calendar] response received', response);
           const events: EventInput[] = (response.events ?? [])
             .map(item => {
               const start = this.parseBackendUtc(item.from);
@@ -135,6 +116,7 @@ export class ManagerCalendar implements OnInit {
               }
 
               return {
+                id: String(item.reservationId ?? ''),
                 title: `${item.title ?? 'clan'} (${item.status ?? ''})`,
                 start,
                 end
@@ -146,11 +128,9 @@ export class ManagerCalendar implements OnInit {
             ...this.calendarOptions,
             events
           };
-          console.log('[manager-calendar] events mapped', events);
           this.calendarLoading = false;
         },
         error: (err) => {
-          console.log('[manager-calendar] request failed', err);
           this.calendarError = err?.error?.message ?? 'Neuspesno ucitavanje kalendara.';
           this.calendarLoading = false;
         }
@@ -159,17 +139,41 @@ export class ManagerCalendar implements OnInit {
 
   private tryAutoLoadCalendar(): void {
     if (!this.selectedSpaceId || !this.selectedResourceId || !this.from || !this.to) {
-      console.log('[manager-calendar] auto-load skipped', {
-        selectedSpaceId: this.selectedSpaceId,
-        selectedResourceId: this.selectedResourceId,
-        from: this.from,
-        to: this.to
-      });
       return;
     }
 
-    console.log('[manager-calendar] auto-load triggered');
     this.loadCalendar();
+  }
+
+  private onEventDrop(dropInfo: EventDropArg): void {
+    const reservationId = Number(dropInfo.event.id);
+    const start = dropInfo.event.start;
+    const end = dropInfo.event.end;
+
+    if (!reservationId || !start || !end) {
+      this.calendarError = 'Neispravni podaci za pomeranje rezervacije.';
+      dropInfo.revert();
+      return;
+    }
+
+    const from = this.toUtcDateTimeIso(start);
+    const to = this.toUtcDateTimeIso(end);
+    if (!from || !to) {
+      this.calendarError = 'Neispravan datum nakon pomeranja.';
+      dropInfo.revert();
+      return;
+    }
+
+    this.calendarError = '';
+    this.managerService.move_reservation(reservationId, { from, to }).subscribe({
+      next: () => {
+        this.loadCalendar();
+      },
+      error: (err) => {
+        this.calendarError = err?.error?.message ?? 'Neuspesno pomeranje rezervacije.';
+        dropInfo.revert();
+      }
+    });
   }
 
   private rebuildResources(): void {
@@ -217,7 +221,7 @@ export class ManagerCalendar implements OnInit {
     return `${year}-${month}-${day}T${hour}:${minute}`;
   }
 
-  private toLocalDateTimeIso(value: string): string | null {
+  private toUtcDateTimeIsoFromInput(value: string): string | null {
     if (!value) {
       return null;
     }
@@ -227,12 +231,16 @@ export class ManagerCalendar implements OnInit {
       return null;
     }
 
-    const year = parsed.getFullYear();
-    const month = String(parsed.getMonth() + 1).padStart(2, '0');
-    const day = String(parsed.getDate()).padStart(2, '0');
-    const hour = String(parsed.getHours()).padStart(2, '0');
-    const minute = String(parsed.getMinutes()).padStart(2, '0');
-    const second = String(parsed.getSeconds()).padStart(2, '0');
+    return this.toUtcDateTimeIso(parsed);
+  }
+
+  private toUtcDateTimeIso(value: Date): string {
+    const year = value.getUTCFullYear();
+    const month = String(value.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(value.getUTCDate()).padStart(2, '0');
+    const hour = String(value.getUTCHours()).padStart(2, '0');
+    const minute = String(value.getUTCMinutes()).padStart(2, '0');
+    const second = String(value.getUTCSeconds()).padStart(2, '0');
     return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
   }
 

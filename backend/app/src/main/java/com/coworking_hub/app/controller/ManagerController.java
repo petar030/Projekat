@@ -19,8 +19,10 @@ import com.coworking_hub.app.repository.SlikaProstoraRepository;
 import com.coworking_hub.app.security.AuthenticatedUser;
 import com.coworking_hub.app.security.CurrentUser;
 import com.coworking_hub.app.service.ImageStorageService;
+import com.coworking_hub.app.service.ManagerOccupancyReportService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -37,6 +39,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +58,7 @@ public class ManagerController {
         private final RezervacijaRepository rezervacijaRepository;
         private final SlikaProstoraRepository slikaProstoraRepository;
         private final ImageStorageService imageStorageService;
+        private final ManagerOccupancyReportService managerOccupancyReportService;
 
     public ManagerController(
             ProstorRepository prostorRepository,
@@ -64,7 +68,8 @@ public class ManagerController {
             KonferencijskaSalaRepository konferencijskaSalaRepository,
             RezervacijaRepository rezervacijaRepository,
                         SlikaProstoraRepository slikaProstoraRepository,
-                        ImageStorageService imageStorageService
+                        ImageStorageService imageStorageService,
+                        ManagerOccupancyReportService managerOccupancyReportService
     ) {
         this.prostorRepository = prostorRepository;
         this.korisnikRepository = korisnikRepository;
@@ -74,6 +79,7 @@ public class ManagerController {
         this.rezervacijaRepository = rezervacijaRepository;
                 this.slikaProstoraRepository = slikaProstoraRepository;
                 this.imageStorageService = imageStorageService;
+                this.managerOccupancyReportService = managerOccupancyReportService;
     }
 
         @PostMapping("/spaces")
@@ -358,6 +364,67 @@ public class ManagerController {
                 return ResponseEntity.ok(new NoShowStatusResponse(reservation.getId(), reservation.getStatus().name(), true));
         }
 
+        @PatchMapping("/reservations/{reservationId}/move")
+        @Transactional
+        public ResponseEntity<?> moveReservation(
+                        @CurrentUser AuthenticatedUser authenticatedUser,
+                        @PathVariable Long reservationId,
+                        @RequestBody MoveReservationRequest request
+        ) {
+                Optional<Korisnik> managerOptional = korisnikRepository.findById(authenticatedUser.userId());
+                if (managerOptional.isEmpty()) {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Korisnik nije pronadjen"));
+                }
+
+                Korisnik manager = managerOptional.get();
+                if (manager.getFirma() == null || manager.getFirma().getId() == null) {
+                        return ResponseEntity.badRequest().body(Map.of("message", "Menadzer nema dodeljenu firmu"));
+                }
+
+                if (request == null || request.from() == null || request.to() == null) {
+                        return ResponseEntity.badRequest().body(Map.of("message", "Neispravan request: from i to su obavezni"));
+                }
+
+                if (!request.to().isAfter(request.from())) {
+                        return ResponseEntity.badRequest().body(Map.of("message", "Neispravan interval: to mora biti posle from"));
+                }
+
+                Optional<Rezervacija> reservationOptional = rezervacijaRepository.findById(reservationId);
+                if (reservationOptional.isEmpty()) {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Rezervacija nije pronadjena"));
+                }
+
+                Rezervacija reservation = reservationOptional.get();
+                if (reservation.getProstor() == null
+                                || reservation.getProstor().getFirma() == null
+                                || reservation.getProstor().getFirma().getId() == null
+                                || !reservation.getProstor().getFirma().getId().equals(manager.getFirma().getId())) {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Rezervacija nije pronadjena"));
+                }
+
+                if (reservation.getStatus() == StatusRezervacije.otkazana || reservation.getStatus() == StatusRezervacije.nepojavljivanje) {
+                        return ResponseEntity.status(HttpStatusCode.valueOf(422))
+                                        .body(Map.of("message", "Pomeranje nije dozvoljeno za ovaj status rezervacije"));
+                }
+
+                if (hasMoveConflict(reservation, request.from(), request.to())) {
+                        return ResponseEntity.status(HttpStatus.CONFLICT)
+                                        .body(Map.of("message", "Termin je vec zauzet za izabrani resurs"));
+                }
+
+                reservation.setDatumOd(request.from());
+                reservation.setDatumDo(request.to());
+                reservation.setAzurirano(currentUtcTime());
+                rezervacijaRepository.save(reservation);
+
+                return ResponseEntity.ok(new MoveReservationResponse(
+                                reservation.getId(),
+                                reservation.getDatumOd(),
+                                reservation.getDatumDo(),
+                                reservation.getStatus().name()
+                ));
+        }
+
         @GetMapping("/calendar")
         @Transactional(readOnly = true)
         public ResponseEntity<?> calendar(
@@ -428,6 +495,86 @@ public class ManagerController {
                                 .toList();
 
                 return ResponseEntity.ok(new ManagerCalendarResponse(events));
+        }
+
+        @GetMapping("/reports/occupancy")
+        @Transactional(readOnly = true)
+        public ResponseEntity<?> monthlyOccupancyReport(
+                        @CurrentUser AuthenticatedUser authenticatedUser,
+                        @RequestParam Long spaceId,
+                        @RequestParam Integer year,
+                        @RequestParam Integer month
+        ) {
+                Optional<Korisnik> managerOptional = korisnikRepository.findById(authenticatedUser.userId());
+                if (managerOptional.isEmpty()) {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Korisnik nije pronadjen"));
+                }
+
+                Korisnik manager = managerOptional.get();
+                if (manager.getFirma() == null || manager.getFirma().getId() == null) {
+                        return ResponseEntity.badRequest().body(Map.of("message", "Menadzer nema dodeljenu firmu"));
+                }
+
+                if (spaceId == null || spaceId <= 0 || year == null || month == null) {
+                        return ResponseEntity.badRequest().body(Map.of("message", "Neispravan request: spaceId, year i month su obavezni"));
+                }
+
+                if (month < 1 || month > 12) {
+                        return ResponseEntity.badRequest().body(Map.of("message", "Month mora biti u opsegu 1-12"));
+                }
+
+                if (year < 2000 || year > 2100) {
+                        return ResponseEntity.badRequest().body(Map.of("message", "Year nije u dozvoljenom opsegu"));
+                }
+
+                YearMonth requestedMonth = YearMonth.of(year, month);
+                YearMonth currentMonthUtc = YearMonth.from(currentUtcTime());
+                if (requestedMonth.isAfter(currentMonthUtc)) {
+                        return ResponseEntity.badRequest().body(Map.of("message", "Izvestaj je dozvoljen samo za tekuci ili prosli mesec"));
+                }
+
+                Optional<Prostor> spaceOptional = prostorRepository.findByIdAndFirmaId(spaceId, manager.getFirma().getId());
+                if (spaceOptional.isEmpty()) {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Prostor nije pronadjen"));
+                }
+
+                Prostor space = spaceOptional.get();
+                OtvoreniProstor openSpace = otvoreniProstorRepository.findByProstorIdIn(List.of(spaceId)).stream()
+                                .findFirst()
+                                .orElse(null);
+                List<Kancelarija> offices = kancelarijaRepository.findByProstorIdIn(List.of(spaceId));
+                List<KonferencijskaSala> meetingRooms = konferencijskaSalaRepository.findByProstorIdIn(List.of(spaceId));
+
+                LocalDateTime monthStart = requestedMonth.atDay(1).atStartOfDay();
+                LocalDateTime monthEnd = requestedMonth.plusMonths(1).atDay(1).atStartOfDay();
+
+                List<Rezervacija> reservations = rezervacijaRepository
+                                .findByProstorIdInAndStatusNotAndDatumDoGreaterThanAndDatumOdLessThanOrderByDatumOdAsc(
+                                                List.of(spaceId),
+                                                StatusRezervacije.otkazana,
+                                                monthStart,
+                                                monthEnd
+                                )
+                                .stream()
+                                .filter(item -> item.getStatus() != StatusRezervacije.nepojavljivanje)
+                                .toList();
+
+                byte[] pdfBytes = managerOccupancyReportService.generateMonthlyOccupancyPdf(
+                                space,
+                                requestedMonth,
+                                openSpace,
+                                offices,
+                                meetingRooms,
+                                reservations
+                );
+
+                String filename = "occupancy-space-" + spaceId + "-" + year + "-" + String.format("%02d", month) + ".pdf";
+
+                return ResponseEntity.ok()
+                                .contentType(MediaType.APPLICATION_PDF)
+                                .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                                .contentLength(pdfBytes.length)
+                                .body(pdfBytes);
         }
 
     @GetMapping("/spaces")
@@ -551,6 +698,12 @@ public class ManagerController {
     ) {
     }
 
+    public record MoveReservationRequest(LocalDateTime from, LocalDateTime to) {
+    }
+
+    public record MoveReservationResponse(Long id, LocalDateTime from, LocalDateTime to, String status) {
+    }
+
         public record CreateSpaceRequest(
                         String naziv,
                         String grad,
@@ -615,6 +768,74 @@ public class ManagerController {
                 return reservation.getSala() == null ? null : reservation.getSala().getId();
         }
 
+        private boolean hasMoveConflict(Rezervacija reservation, LocalDateTime newFrom, LocalDateTime newTo) {
+                if (reservation.getOtvoreniProstor() != null) {
+                        return openSpaceNoCapacityAfterMove(reservation, newFrom, newTo);
+                }
+
+                List<Rezervacija> overlaps = rezervacijaRepository.findByProstorIdAndStatusNotAndDatumDoGreaterThanAndDatumOdLessThan(
+                                reservation.getProstor().getId(),
+                                StatusRezervacije.otkazana,
+                                newFrom,
+                                newTo
+                );
+
+                String type = resolveReservationType(reservation);
+                Long movedResourceId = resolveResourceId(type, reservation);
+
+                return overlaps.stream()
+                                .filter(existing -> !existing.getId().equals(reservation.getId()))
+                                .anyMatch(existing -> {
+                                        Long existingResourceId = resolveResourceId(type, existing);
+                                        return movedResourceId != null && movedResourceId.equals(existingResourceId);
+                                });
+        }
+
+        private boolean openSpaceNoCapacityAfterMove(Rezervacija reservation, LocalDateTime newFrom, LocalDateTime newTo) {
+                if (reservation.getOtvoreniProstor() == null || reservation.getOtvoreniProstor().getId() == null) {
+                        return true;
+                }
+
+                Integer deskCount = reservation.getOtvoreniProstor().getBrojStolova();
+                if (deskCount == null || deskCount <= 0) {
+                        return true;
+                }
+
+                List<Rezervacija> overlaps = rezervacijaRepository.findByProstorIdAndStatusNotAndDatumDoGreaterThanAndDatumOdLessThan(
+                                reservation.getProstor().getId(),
+                                StatusRezervacije.otkazana,
+                                newFrom,
+                                newTo
+                );
+
+                List<ReservationEdge> edges = overlaps.stream()
+                                .filter(existing -> !existing.getId().equals(reservation.getId()))
+                                .filter(existing -> existing.getOtvoreniProstor() != null
+                                                && reservation.getOtvoreniProstor().getId().equals(existing.getOtvoreniProstor().getId()))
+                                .flatMap(existing -> java.util.stream.Stream.of(
+                                                new ReservationEdge(existing.getDatumOd(), 1),
+                                                new ReservationEdge(existing.getDatumDo(), -1)
+                                ))
+                                .collect(Collectors.toCollection(java.util.ArrayList::new));
+
+                edges.add(new ReservationEdge(newFrom, 1));
+                edges.add(new ReservationEdge(newTo, -1));
+
+                edges.sort(java.util.Comparator
+                                .comparing(ReservationEdge::at)
+                                .thenComparing(ReservationEdge::delta));
+
+                int active = 0;
+                for (ReservationEdge edge : edges) {
+                        active += edge.delta();
+                        if (active > deskCount) {
+                                return true;
+                        }
+                }
+
+                return false;
+        }
+
         private boolean canConfirmOrNoShow(Rezervacija reservation, LocalDateTime now) {
                 if (reservation.getStatus() != StatusRezervacije.aktivna) {
                         return false;
@@ -631,5 +852,8 @@ public class ManagerController {
 
         private boolean isBlank(String value) {
                 return value == null || value.isBlank();
+        }
+
+        private record ReservationEdge(LocalDateTime at, int delta) {
         }
 }
