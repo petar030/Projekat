@@ -1,5 +1,77 @@
 .mine-comment {
 	border: 1px solid #7aa5ff;
-	padding: 6px;
+	padding: 8px;
+	border-radius: 8px;
+	background: #f3f7ff;
+}
+
+.member-details {
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: 16px;
+}
+
+.member-details .image-main {
+	max-height: 360px;
+	object-fit: cover;
+	border-radius: 10px;
+	border: 1px solid #dbe3ef;
+}
+
+.member-details .thumb-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.member-details .thumb-btn {
+	padding: 0;
+	border: 1px solid #dbe3ef;
+	overflow: hidden;
+	border-radius: 8px;
+	background: #fff;
+}
+
+.member-details .thumb-btn img {
+	display: block;
+	width: 90px;
+	height: 64px;
+	object-fit: cover;
+}
+
+.member-details .calendar-wrap {
+	display: block;
+	width: 100%;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+:host ::ng-deep .calendar-wrap .fc {
+	width: 100%;
+	min-width: 0;
+}
+
+:host ::ng-deep .calendar-wrap .fc .fc-view-harness {
+	min-height: 460px;
+}
+
+.member-details textarea {
+	min-height: 100px;
+}
+
+@media (max-width: 900px) {
+	.member-details {
+		padding: 12px;
+	}
+
+	.member-details .image-main {
+		max-height: 260px;
+	}
+
+	:host ::ng-deep .calendar-wrap .fc .fc-view-harness {
+		min-height: 380px;
+	}
+
 }
 

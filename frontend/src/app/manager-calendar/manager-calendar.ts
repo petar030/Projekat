@@ -37,6 +37,11 @@ export class ManagerCalendar implements OnInit {
     plugins: [timeGridPlugin, interactionPlugin],
     initialView: 'timeGridWeek',
     timeZone: 'local',
+    height: 'auto',
+    contentHeight: 'auto',
+    eventBackgroundColor: '#64748b',
+    eventBorderColor: '#64748b',
+    eventTextColor: '#ffffff',
     editable: true,
     dragScroll: false,
     eventStartEditable: true,
@@ -55,8 +60,24 @@ export class ManagerCalendar implements OnInit {
   };
 
   ngOnInit(): void {
+    if (this.isSmallScreen()) {
+      this.calendarOptions = {
+        ...this.calendarOptions,
+        initialView: 'timeGridDay',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'timeGridDay'
+        }
+      };
+    }
+
     this.setDefaultRange();
     this.loadSpaces();
+  }
+
+  private isSmallScreen(): boolean {
+    return typeof window !== 'undefined' && window.innerWidth <= 768;
   }
 
   loadSpaces(): void {

@@ -1,0 +1,45 @@
+.public-details {
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: 16px;
+}
+
+.public-details .image-main {
+	max-height: 360px;
+	object-fit: cover;
+	border-radius: 10px;
+	border: 1px solid #dbe3ef;
+}
+
+.public-details .thumb-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.public-details .thumb-btn {
+	padding: 0;
+	border: 1px solid #dbe3ef;
+	overflow: hidden;
+	border-radius: 8px;
+	background: #fff;
+}
+
+.public-details .thumb-btn img {
+	display: block;
+	width: 90px;
+	height: 64px;
+	object-fit: cover;
+}
+
+@media (max-width: 768px) {
+	.public-details {
+		padding: 12px;
+	}
+
+	.public-details .image-main {
+		max-height: 260px;
+	}
+}
+

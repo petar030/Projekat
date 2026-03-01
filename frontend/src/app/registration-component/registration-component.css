@@ -1,0 +1,9 @@
+.login-container {
+	max-width: 720px;
+}
+
+.login-container small {
+	display: block;
+	margin-top: 6px;
+}
+

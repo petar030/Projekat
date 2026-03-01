@@ -1,13 +1,13 @@
 <app-profile-component></app-profile-component>
 
-<div>
+<div class="page admin-page">
 	<h3>Admin panel</h3>
 
 	<p *ngIf="errorMessage">{{ errorMessage }}</p>
 	<p *ngIf="successMessage">{{ successMessage }}</p>
 
 	<h4>Korisnici</h4>
-	<div>
+	<div class="admin-filters">
 		<input type="text" placeholder="Pretraga..." [(ngModel)]="search" />
 		<select [(ngModel)]="roleFilter">
 			<option value="">Sve uloge</option>
@@ -129,7 +129,7 @@
 	</table>
 
 	<h4>Statistika</h4>
-	<div>
+	<div class="stats-filters">
 		<label for="statsSpace">Prostor:</label>
 		<select id="statsSpace" [(ngModel)]="statsSpaceId">
 			<option [ngValue]="undefined">Izaberi prostor</option>
@@ -143,7 +143,7 @@
 
 	<h5>Mesečna statistika prostora: {{ statsSpaceName }} ({{ statsYear }})</h5>
 	<p *ngIf="statsLoading">Ucitavanje statistike...</p>
-	<div *ngIf="!statsLoading && statsItems.length > 0">
+	<div *ngIf="!statsLoading && statsItems.length > 0" class="stats-charts">
 		<h6>Lajkovi i dislajkovi po mesecima</h6>
 		<canvas
 			baseChart

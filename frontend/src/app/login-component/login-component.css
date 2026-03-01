@@ -1,0 +1,12 @@
+.login-container {
+	max-width: 560px;
+}
+
+.login-container form {
+	margin-bottom: 12px;
+}
+
+.login-container a {
+	word-break: break-word;
+}
+

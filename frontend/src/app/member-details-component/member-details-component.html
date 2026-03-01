@@ -1,4 +1,4 @@
-<div>
+<div class="member-details">
 	<h2>Detalji prostora</h2>
 
 	<p *ngIf="loading">Ucitavanje...</p>
@@ -16,9 +16,10 @@
 
 		<h3>Galerija slika</h3>
 		<div *ngIf="details.images && details.images.length > 0; else noImages">
-			<img [src]="selectedImageUrl()" alt="Glavna slika prostora" />
-			<div>
+			<img class="image-main" [src]="selectedImageUrl()" alt="Glavna slika prostora" />
+			<div class="thumb-list">
 				<button
+					class="thumb-btn"
 					type="button"
 					*ngFor="let image of details.images; let i = index"
 					(click)="selectImage(i)"
@@ -72,7 +73,7 @@
 		<p *ngIf="availabilityLoading">Ucitavanje zauzetosti...</p>
 		<p *ngIf="availabilityError">{{ availabilityError }}</p>
 
-		<div *ngIf="!availabilityLoading && availabilityResources.length > 0">
+		<div *ngIf="!availabilityLoading">
 			<div *ngIf="availabilityResources.length > 1">
 				<button type="button" (click)="previousResource()">←</button>
 				<span>
@@ -88,33 +89,37 @@
 				<p *ngIf="selectedType === 'sala'"><strong>Dodatna oprema:</strong> {{ currentResource()?.additionalEquipment || 'Nije navedena.' }}</p>
 			</div>
 
-			<div>
-				<full-calendar [options]="calendarOptions"></full-calendar>
+			<p *ngIf="availabilityResources.length === 0">Nema dostupnih resursa za izabrane kriterijume.</p>
+
+			<div #calendarWrap class="calendar-wrap">
+				<full-calendar #memberCalendar [options]="calendarOptions"></full-calendar>
 			</div>
 
-			<h3>Rezervacija</h3>
-			<div>
-				<label for="reservationDate">Datum:</label>
-				<input
-					id="reservationDate"
-					type="date"
-					[(ngModel)]="selectedDate"
-					name="selectedDate"
-					[min]="reservationDateMin()"
-					[max]="reservationDateMax()"
-				/>
+			<div *ngIf="availabilityResources.length > 0">
+				<h3>Rezervacija</h3>
+				<div>
+					<label for="reservationDate">Datum:</label>
+					<input
+						id="reservationDate"
+						type="date"
+						[(ngModel)]="selectedDate"
+						name="selectedDate"
+						[min]="reservationDateMin()"
+						[max]="reservationDateMax()"
+					/>
+				</div>
+				<div>
+					<label for="fromTime">Od:</label>
+					<input id="fromTime" type="time" [(ngModel)]="fromTime" name="fromTime" />
+				</div>
+				<div>
+					<label for="toTime">Do:</label>
+					<input id="toTime" type="time" [(ngModel)]="toTime" name="toTime" />
+				</div>
+				<button type="button" (click)="reserve()">Rezervisi</button>
+				<p *ngIf="reservationMessage">{{ reservationMessage }}</p>
+				<p *ngIf="reservationError">{{ reservationError }}</p>
 			</div>
-			<div>
-				<label for="fromTime">Od:</label>
-				<input id="fromTime" type="time" [(ngModel)]="fromTime" name="fromTime" />
-			</div>
-			<div>
-				<label for="toTime">Do:</label>
-				<input id="toTime" type="time" [(ngModel)]="toTime" name="toTime" />
-			</div>
-			<button type="button" (click)="reserve()">Rezervisi</button>
-			<p *ngIf="reservationMessage">{{ reservationMessage }}</p>
-			<p *ngIf="reservationError">{{ reservationError }}</p>
 		</div>
 
 		<h3>Reakcije i komentar</h3>

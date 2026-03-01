@@ -1,11 +1,41 @@
+.manager-add-page {
+	max-width: 960px;
+	margin: 0 auto;
+	padding: 16px;
+}
+
+.mode-actions,
+.manager-add-page .action-buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.manager-add-page .form-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 10px;
+}
+
 .space-map {
 	height: 320px;
-	max-width: 900px;
 	width: 100%;
 	border: 1px solid #ccc;
 	margin-top: 8px;
+	border-radius: 8px;
 }
 
 .coordinates {
 	margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+	.manager-add-page {
+		padding: 12px;
+	}
+
+	.space-map {
+		height: 260px;
+	}
 }

@@ -28,10 +28,12 @@ export class RecoveryComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.token = this.route.snapshot.paramMap.get('token') ?? '';
 
-    const expiresAt = this.route.snapshot.queryParamMap.get('expiresAt');
-    if (expiresAt) {
-      const targetMs = new Date(expiresAt).getTime();
-      this.remainingSeconds = Math.max(0, Math.floor((targetMs - Date.now()) / 1000));
+    const expiresInSecondsParam = Number(this.route.snapshot.queryParamMap.get('expiresInSeconds'));
+    const requestedAtParam = Number(this.route.snapshot.queryParamMap.get('requestedAt'));
+
+    if (Number.isFinite(expiresInSecondsParam) && expiresInSecondsParam > 0 && Number.isFinite(requestedAtParam) && requestedAtParam > 0) {
+      const elapsedSeconds = Math.max(0, Math.floor((Date.now() - requestedAtParam) / 1000));
+      this.remainingSeconds = Math.max(0, Math.floor(expiresInSecondsParam) - elapsedSeconds);
     } else {
       this.remainingSeconds = 1800;
     }
@@ -68,7 +70,7 @@ export class RecoveryComponent implements OnInit, OnDestroy {
     this.authService.reset_confirm(this.token, this.newPassword).subscribe({
       next: (response: any) => {
         this.successMessage = response?.message ?? 'Lozinka je uspešno promenjena.';
-        setTimeout(() => this.router.navigate(['/']), 1200);
+        setTimeout(() => this.router.navigate(['/login']), 1200);
       },
       error: (err) => {
         this.errorMessage = err?.error?.message ?? 'Neuspešna promena lozinke.';

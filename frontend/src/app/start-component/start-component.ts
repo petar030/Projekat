@@ -21,6 +21,7 @@ export class StartComponent implements OnInit {
   private router = inject(Router);
 
   top5Spaces: PublicHomeSpace[] = [];
+  totalApprovedSpaces: number = 0;
   spaces: PublicSearchItem[] = [];
   cities: string[] = [];
 
@@ -60,9 +61,11 @@ export class StartComponent implements OnInit {
   loadHome(): void {
     this.publicService.home().subscribe({
       next: (response) => {
+        this.totalApprovedSpaces = response.totalApprovedSpaces ?? 0;
         this.top5Spaces = response.top5Spaces || [];
       },
       error: () => {
+        this.totalApprovedSpaces = 0;
         this.errorMessage = 'Greska pri ucitavanju TOP 5 prostora.';
       }
     });

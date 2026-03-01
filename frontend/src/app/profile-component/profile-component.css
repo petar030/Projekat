@@ -1,0 +1,10 @@
+.login-container {
+	max-width: 760px;
+}
+
+.login-container img {
+	max-width: 180px;
+	border-radius: 10px;
+	border: 1px solid #dbe3ef;
+}
+

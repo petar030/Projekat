@@ -1,8 +1,8 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { FullCalendarModule } from '@fullcalendar/angular';
+import { FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
 import { CalendarOptions, EventInput } from '@fullcalendar/core';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -19,7 +19,7 @@ import { PublicService } from '../services/public/public-service';
   templateUrl: './member-details-component.html',
   styleUrl: './member-details-component.css'
 })
-export class MemberDetailsComponent implements OnInit {
+export class MemberDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private route = inject(ActivatedRoute);
   private publicService = inject(PublicService);
@@ -56,10 +56,19 @@ export class MemberDetailsComponent implements OnInit {
   private readonly cookiePrefix = 'member_space_main_image_';
   private currentWeekEnd: string = '';
   private reservationWeekEndInclusive: string = '';
+  private calendarResizeObserver?: ResizeObserver;
+  private resizeRafId?: number;
+  @ViewChild('memberCalendar') memberCalendar?: FullCalendarComponent;
+  @ViewChild('calendarWrap') calendarWrap?: ElementRef<HTMLElement>;
   calendarOptions: CalendarOptions = {
     plugins: [timeGridPlugin],
-    initialView: 'timeGridWeek',
+    initialView: this.initialCalendarView(),
     timeZone: 'local',
+    height: 720,
+    contentHeight: 680,
+    eventBackgroundColor: '#64748b',
+    eventBorderColor: '#64748b',
+    eventTextColor: '#ffffff',
     headerToolbar: false,
     firstDay: 1,
     allDaySlot: false,
@@ -125,6 +134,43 @@ export class MemberDetailsComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  ngAfterViewInit(): void {
+    if (typeof window === 'undefined' || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const host = this.calendarWrap?.nativeElement;
+    if (!host) {
+      return;
+    }
+
+    this.calendarResizeObserver = new ResizeObserver(() => {
+      if (this.resizeRafId !== undefined) {
+        cancelAnimationFrame(this.resizeRafId);
+      }
+
+      this.resizeRafId = requestAnimationFrame(() => {
+        this.applyResponsiveCalendarView();
+      });
+    });
+
+    this.calendarResizeObserver.observe(host);
+    setTimeout(() => this.applyResponsiveCalendarView(), 0);
+  }
+
+  ngOnDestroy(): void {
+    this.calendarResizeObserver?.disconnect();
+    if (this.resizeRafId !== undefined) {
+      cancelAnimationFrame(this.resizeRafId);
+    }
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.applyResponsiveCalendarView();
+    setTimeout(() => this.memberCalendar?.getApi().updateSize(), 0);
   }
 
   selectImage(index: number): void {
@@ -265,6 +311,39 @@ export class MemberDetailsComponent implements OnInit {
     }
 
     return localDate.toISOString().slice(0, 19);
+  }
+
+  private isSmallScreen(): boolean {
+    return typeof window !== 'undefined' && window.innerWidth <= 768;
+  }
+
+  private initialCalendarView(): 'timeGridDay' | 'timeGridWeek' {
+    return this.isSmallScreen() ? 'timeGridDay' : 'timeGridWeek';
+  }
+
+  private applyResponsiveCalendarView(): void {
+    const smallScreen = this.isSmallScreen();
+    const targetView: 'timeGridDay' | 'timeGridWeek' = smallScreen ? 'timeGridDay' : 'timeGridWeek';
+    const targetHeight = smallScreen ? 560 : 720;
+    const targetContentHeight = smallScreen ? 520 : 680;
+
+    this.calendarOptions = {
+      ...this.calendarOptions,
+      initialView: targetView,
+      height: targetHeight,
+      contentHeight: targetContentHeight
+    };
+
+    const api = this.memberCalendar?.getApi();
+    if (api && api.view.type !== targetView) {
+      api.changeView(targetView);
+    }
+
+    api?.setOption('height', targetHeight);
+    api?.setOption('contentHeight', targetContentHeight);
+
+    api?.render();
+    api?.updateSize();
   }
 
   react(tip: 'svidjanje' | 'nesvidjanje'): void {
@@ -431,6 +510,11 @@ export class MemberDetailsComponent implements OnInit {
       ...this.calendarOptions,
       events
     };
+
+    setTimeout(() => {
+      this.applyResponsiveCalendarView();
+      this.memberCalendar?.getApi().updateSize();
+    }, 0);
   }
 
   private addDays(isoDate: string, days: number): string {

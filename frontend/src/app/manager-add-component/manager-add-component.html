@@ -1,9 +1,9 @@
+<div class="manager-add-page page">
 <h2>Dodavanje prostora</h2>
 
-<div>
+<div class="mode-actions">
 	<button type="button" (click)="setMode('forma')" [disabled]="mode === 'forma'">Forma</button>
 	<button type="button" (click)="setMode('json')" [disabled]="mode === 'json'">JSON import</button>
-	<button type="button" (click)="goBack()">Nazad</button>
 </div>
 
 <div>
@@ -15,6 +15,7 @@
 <div *ngIf="mode === 'forma'">
 	<h3>Dodavanje preko forme</h3>
 
+	<div class="form-grid">
 	<div>
 		<label>Naziv *</label>
 		<input type="text" [(ngModel)]="naziv" name="naziv">
@@ -57,6 +58,7 @@
 		<label>Broj stolova open space *</label>
 		<input type="number" [(ngModel)]="openSpaceBrojStolova" name="openSpaceBrojStolova" min="1">
 	</div>
+	</div>
 
 	<button type="button" (click)="submitForm()">Kreiraj prostor</button>
 </div>
@@ -69,5 +71,7 @@
 	<button type="button" (click)="submitJson()">Uvezi prostor iz JSON-a</button>
 </div>
 
-<div *ngIf="successMessage" style="color: green; margin-top: 12px;">{{ successMessage }}</div>
-<div *ngIf="errorMessage" style="color: red; margin-top: 12px;">{{ errorMessage }}</div>
+<div *ngIf="successMessage" class="success-message">{{ successMessage }}</div>
+<div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+
+</div>

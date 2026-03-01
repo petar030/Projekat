@@ -1,6 +1,4 @@
-<div>
-	<button type="button" (click)="backToStart()">Nazad</button>
-
+<div class="public-details">
 	<p *ngIf="loading">Ucitavanje...</p>
 	<p *ngIf="!loading && errorMessage">{{ errorMessage }}</p>
 
@@ -21,9 +19,10 @@
 
 		<h3>Galerija</h3>
 		<div *ngIf="details.images && details.images.length > 0; else noImages">
-			<img [src]="selectedImageUrl()" alt="Glavna slika prostora" />
-			<div>
+			<img class="image-main" [src]="selectedImageUrl()" alt="Glavna slika prostora" />
+			<div class="thumb-list">
 				<button
+					class="thumb-btn"
 					type="button"
 					*ngFor="let image of details.images; let i = index"
 					(click)="selectImage(i)"

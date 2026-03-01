@@ -1,2 +1,310 @@
 /* You can add global styles to this file, and also import other style files */
 @import 'leaflet/dist/leaflet.css';
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+	font-family: Arial, sans-serif;
+	line-height: 1.45;
+}
+
+body {
+	background: #f5f7fb;
+	color: #1e293b;
+}
+
+app-root {
+	display: block;
+	min-height: 100vh;
+}
+
+.page,
+.login-container,
+.start-container {
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: 16px;
+}
+
+.card,
+.login-container,
+.start-container section,
+.page > div,
+.page > form {
+	background: #ffffff;
+	border: 1px solid #dbe3ef;
+	border-radius: 10px;
+	padding: 14px;
+	margin-bottom: 14px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	margin: 0 0 12px;
+	line-height: 1.25;
+}
+
+p {
+	margin: 0 0 10px;
+	word-break: break-word;
+}
+
+img {
+	max-width: 100%;
+	height: auto;
+}
+
+iframe {
+	max-width: 100%;
+	border: 0;
+	border-radius: 8px;
+}
+
+label {
+	display: inline-block;
+	margin-bottom: 6px;
+	font-weight: 600;
+}
+
+input,
+select,
+textarea,
+button {
+	font: inherit;
+}
+
+input:not([type='checkbox']):not([type='radio']),
+select,
+textarea {
+	width: 100%;
+	max-width: 100%;
+	padding: 9px 10px;
+	border: 1px solid #c9d4e5;
+	border-radius: 8px;
+	background: #fff;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+	width: auto;
+	max-width: none;
+	margin-right: 6px;
+	vertical-align: middle;
+}
+
+textarea {
+	min-height: 96px;
+	resize: vertical;
+}
+
+button {
+	padding: 9px 12px;
+	border: 1px solid #c0cde0;
+	border-radius: 8px;
+	background: #eaf0fb;
+	cursor: pointer;
+}
+
+button:disabled {
+	cursor: not-allowed;
+	opacity: 0.7;
+}
+
+.form-group {
+	margin-bottom: 12px;
+}
+
+.actions {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.error,
+.error-message {
+	color: #b91c1c;
+}
+
+.success-message {
+	color: #15803d;
+}
+
+table:not([class*='fc-']) {
+	width: 100%;
+	min-width: 100%;
+	border-collapse: collapse;
+	display: table;
+	white-space: normal;
+	background: #fff;
+	border: 1px solid #dbe3ef;
+	border-radius: 8px;
+}
+
+th:not([class*='fc-']),
+td:not([class*='fc-']) {
+	padding: 8px 10px;
+	border-bottom: 1px solid #e5ebf5;
+	text-align: left;
+	vertical-align: top;
+}
+
+tr:last-child td:not([class*='fc-']) {
+	border-bottom: none;
+}
+
+.search-form,
+.calendar-filters {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 12px;
+}
+
+.search-form .actions,
+.calendar-filters button {
+	align-self: end;
+}
+
+.fc {
+	width: 100%;
+}
+
+.fc .fc-view-harness {
+	min-height: 500px;
+}
+
+/*
+ * Do NOT override .fc .fc-scroller overflow.
+ * FullCalendar v6 uses synchronised scrollers — some are intentionally
+ * overflow:hidden and are synced to a master scroller.  Forcing
+ * overflow:auto on all of them breaks layout calculations, especially
+ * on narrow viewports.
+ */
+
+.fc table {
+	display: table !important;
+	white-space: normal !important;
+}
+
+.fc .fc-scrollgrid {
+	min-width: 100%;
+}
+
+.fc .fc-timegrid-slot {
+	height: 2.5rem;
+}
+
+.fc .fc-event,
+.fc .fc-timegrid-event {
+	background-color: #64748b;
+	border-color: #64748b;
+	color: #ffffff;
+}
+
+.calendar-wrapper,
+.calendar-wrap {
+	width: 100%;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+	.page,
+	.login-container,
+	.start-container {
+		padding: 12px;
+	}
+
+	.card,
+	.login-container,
+	.start-container section,
+	.page > div,
+	.page > form {
+		padding: 12px;
+	}
+
+	h1 {
+		font-size: 1.6rem;
+	}
+
+	h2 {
+		font-size: 1.35rem;
+	}
+
+	table:not([class*='fc-']) {
+		font-size: 0.92rem;
+		display: block;
+		overflow-x: auto;
+		white-space: nowrap;
+	}
+
+	.fc .fc-view-harness {
+		min-height: 420px;
+	}
+
+	.calendar-wrapper .fc,
+	.calendar-wrap .fc {
+		min-width: 340px;
+	}
+
+	.fc .fc-scrollgrid {
+		min-width: 100%;
+	}
+
+	.fc .fc-toolbar {
+		flex-wrap: wrap;
+		gap: 4px;
+	}
+
+	.fc .fc-toolbar-title {
+		font-size: 1rem;
+	}
+
+	.fc .fc-button {
+		padding: 3px 8px;
+		font-size: 0.85rem;
+	}
+}
+
+@media (max-width: 480px) {
+	button,
+	input,
+	select,
+	textarea {
+		font-size: 0.95rem;
+	}
+
+	.actions {
+		flex-direction: column;
+	}
+
+	.actions button {
+		width: 100%;
+	}
+
+	.fc .fc-view-harness {
+		min-height: 340px;
+	}
+
+	.calendar-wrapper .fc,
+	.calendar-wrap .fc {
+		min-width: 300px;
+	}
+
+	.fc .fc-toolbar-title {
+		font-size: 0.9rem;
+	}
+
+	.fc .fc-button {
+		padding: 2px 6px;
+		font-size: 0.8rem;
+	}
+}

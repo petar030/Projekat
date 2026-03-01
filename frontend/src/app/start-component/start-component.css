@@ -1,1 +1,29 @@
+.start-container .table {
+	margin-top: 8px;
+	width: 100%;
+	min-width: 100%;
+}
+
+.general-info-section p {
+	margin-bottom: 0;
+}
+
+.sortable {
+	cursor: pointer;
+	user-select: none;
+}
+
+details {
+	padding: 8px;
+	border: 1px solid #dbe3ef;
+	border-radius: 8px;
+	background: #fff;
+}
+
+details > div {
+	margin-top: 8px;
+	max-height: 180px;
+	overflow: auto;
+}
+
 

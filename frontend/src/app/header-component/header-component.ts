@@ -17,13 +17,25 @@ export class HeaderComponent {
   private authService = inject(AuthService);
 
   isHomeRoute: boolean = this.router.url === '/';
+  showLogout: boolean = false;
 
   constructor() {
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe(() => {
-        this.isHomeRoute = this.router.url === '/';
+        this.syncRouteState();
       });
+
+    this.syncRouteState();
+  }
+
+  private syncRouteState(): void {
+    const url = this.router.url;
+    this.isHomeRoute = url === '/';
+
+    const isLoginRoute = url === '/login';
+    const isPublicDetailsRoute = url.startsWith('/public_details/');
+    this.showLogout = !this.isHomeRoute && !isLoginRoute && !isPublicDetailsRoute;
   }
 
   open_login(): void {

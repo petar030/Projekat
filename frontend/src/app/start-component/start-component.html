@@ -1,6 +1,14 @@
 <div class="start-container">
 	<h1>Coworking Hub</h1>
 
+	<section class="general-info-section">
+		<h2>Opste informacije</h2>
+		<p>
+			<strong>Ukupan broj registrovanih coworking prostora:</strong>
+			{{ totalApprovedSpaces }}
+		</p>
+	</section>
+
 	<section class="top-section">
 		<h2>TOP 5 prostora</h2>
 		<table class="table" *ngIf="top5Spaces.length > 0; else noTop5">

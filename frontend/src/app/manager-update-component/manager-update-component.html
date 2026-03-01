@@ -1,11 +1,11 @@
-<div>
+<div class="manager-update-page page">
 	<h3>Dodavanje podprostora</h3>
 
 	<p><strong>Prostor ID:</strong> {{ spaceId }}</p>
 	<p *ngIf="errorMessage">{{ errorMessage }}</p>
 	<p *ngIf="successMessage">{{ successMessage }}</p>
 
-	<div>
+	<div class="type-actions">
 		<button type="button" (click)="selectType('kancelarija')">Dodaj kancelariju</button>
 		<button type="button" (click)="selectType('sala')">Dodaj salu</button>
 	</div>
@@ -33,6 +33,4 @@
 		</div>
 		<button type="submit">Sacuvaj salu</button>
 	</form>
-
-	<button type="button" (click)="goBack()">Nazad na manager pregled</button>
 </div>

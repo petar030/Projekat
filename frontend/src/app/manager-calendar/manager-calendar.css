@@ -5,8 +5,29 @@
 	margin-bottom: 14px;
 }
 
-select,
-input,
-button {
+.manager-calendar-page {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 16px;
+}
+
+.calendar-wrapper {
+	overflow-x: auto;
+}
+
+:host ::ng-deep .calendar-wrapper .fc {
+	width: 100%;
+	min-width: 0;
+}
+
+.calendar-filters select,
+.calendar-filters input,
+.calendar-filters button {
 	padding: 6px;
+}
+
+@media (max-width: 768px) {
+	.manager-calendar-page {
+		padding: 12px;
+	}
 }

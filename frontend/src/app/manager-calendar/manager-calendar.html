@@ -1,5 +1,4 @@
-
-<div>
+<div class="page manager-calendar-page">
 	<h3>Kalendar rezervacija</h3>
 
 	<p *ngIf="spacesLoading">Ucitavanje prostora...</p>
@@ -45,7 +44,7 @@
 	<p *ngIf="calendarLoading">Ucitavanje kalendara...</p>
 	<p *ngIf="calendarError">{{ calendarError }}</p>
 
-	<div>
+	<div class="calendar-wrapper">
 		<full-calendar [options]="calendarOptions"></full-calendar>
 	</div>
 </div>

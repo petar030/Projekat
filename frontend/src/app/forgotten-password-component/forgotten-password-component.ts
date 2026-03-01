@@ -24,7 +24,9 @@ export class ForgottenPasswordComponent {
       next: (response: PasswordResetRequestResponse) => {
         this.router.navigate(['/recovery', response.token], {
           queryParams: {
-            expiresAt: response.tokenExpiresAt
+            expiresAt: response.tokenExpiresAt,
+            expiresInSeconds: response.expiresInSeconds,
+            requestedAt: Date.now()
           }
         });
       },

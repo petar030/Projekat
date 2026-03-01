@@ -1,4 +1,35 @@
 canvas {
   max-width: 100%;
   margin: 10px 0 16px;
+  max-height: 360px;
+}
+
+.admin-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.admin-filters,
+.stats-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+
+.stats-charts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 768px) {
+  .admin-page {
+    padding: 12px;
+  }
+
+  canvas {
+    max-height: 280px;
+  }
 }
