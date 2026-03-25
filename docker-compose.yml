@@ -1,4 +1,16 @@
 services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: coworking_hub_frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "4200:80"
+
   backend:
     build:
       context: ./backend/app

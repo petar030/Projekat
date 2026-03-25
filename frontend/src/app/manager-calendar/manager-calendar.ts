@@ -46,7 +46,7 @@ export class ManagerCalendar implements OnInit {
     dragScroll: false,
     eventStartEditable: true,
     eventDurationEditable: false,
-    snapDuration: '00:30:00',
+    snapDuration: '00:01:00',
     slotDuration: '00:30:00',
     selectable: false,
     eventDrop: this.onEventDrop.bind(this),
