@@ -1,6 +1,7 @@
 # Coworking Hub
 
-Minimal full-stack web application for coworking space management.
+Full-stack web application for coworking space management, built with Angular, Spring Boot, and MySQL.
+It supports role-based workflows for members, managers, and administrators, including authentication, space listing, reservations, and basic reporting.
 
 ## Tech Stack
 - **Frontend:** Angular 20
